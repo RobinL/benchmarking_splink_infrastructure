@@ -82,12 +82,16 @@ iam_client.add_role_to_instance_profile(
     InstanceProfileName=S3_IAM_INSTANCE_PROFILE_NAME, RoleName=S3_IAM_ROLE_NAME
 )
 
+time.sleep(10)
+
 # Create EC2 instance with the IAM role and user data
 user_data_script = """#!/bin/bash
-sudo apt-get update
-sudo apt-get install -y python3-pip
-pip3 install -r https://gist.githubusercontent.com/RobinL/ca4d62f7e2c5c6be11c483b88b48c0e0/raw/32da43473c3c29474011bff755d915c98adcb24c/requirements.txt
-python3 https://gist.githubusercontent.com/RobinL/ca4d62f7e2c5c6be11c483b88b48c0e0/raw/ef5ebc5ec988eda79483bc7b74062a93cc44660f/run.py
+sudo yum update -y
+sudo yum install -y python3-pip
+curl -O https://gist.githubusercontent.com/RobinL/ca4d62f7e2c5c6be11c483b88b48c0e0/raw/f351cea46edd4165448e74d0a6bc3bb6078f5785/requirements.txt
+pip3 install -r requirements.txt
+curl -O https://gist.githubusercontent.com/RobinL/ca4d62f7e2c5c6be11c483b88b48c0e0/raw/f351cea46edd4165448e74d0a6bc3bb6078f5785/run.py
+python3 run.py
 shutdown now
 """
 
@@ -141,7 +145,7 @@ iam_client.remove_role_from_instance_profile(
 )
 
 # Allow time for the role removal to propagate
-time.sleep(10)
+time.sleep(5)
 
 # Delete the IAM role
 iam_client.delete_role(RoleName=S3_IAM_ROLE_NAME)
