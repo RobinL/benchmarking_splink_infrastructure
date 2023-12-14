@@ -3,6 +3,12 @@ To connect to the Ec2 instance using ec2 instance connect, have to go to securit
 https://instances.vantage.sh/
 
 
+## Duckdb docs
+
+
+https://duckdb.org/docs/guides/performance/my-workload-is-slow
+> Do you have enough memory? DuckDB works best if you have 5-10GB memory per CPU core.
+
 ## Machine types
 
 https://github.com/duckdblabs/db-benchmark/pull/54#issuecomment-1809941284
