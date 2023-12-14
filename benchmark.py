@@ -15,6 +15,7 @@ s3_client = boto3.client("s3", region_name=AWS_REGION)
 iam_client = boto3.client("iam", region_name=AWS_REGION)
 ec2_client = boto3.client("ec2", region_name=AWS_REGION)
 
+start_time = time.time()
 
 # Create S3 bucket
 try:
@@ -136,8 +137,11 @@ git clone https://github.com/RobinL/test_run_benchmarks.git
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/home/ec2-user/test_run_benchmarks/metrics_config.json -s
 
 cd test_run_benchmarks
+python3 -m venv venv
+source venv/bin/activate
 pip3 install -r requirements.txt
 python3 run.py
+deactivate
 """
 
 # The rest of your EC2 instance creation and monitoring code remains the same
@@ -211,3 +215,6 @@ iam_client.delete_role(RoleName=S3_IAM_ROLE_NAME)
 iam_client.delete_instance_profile(InstanceProfileName=S3_IAM_INSTANCE_PROFILE_NAME)
 
 print("Cleanup complete: IAM role, policy, and instance profile have been deleted.")
+
+end_time = time.time()
+print(f"Total time taken: {end_time - start_time:.2f} seconds")
