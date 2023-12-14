@@ -141,8 +141,6 @@ git clone https://github.com/RobinL/test_run_benchmarks.git
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/home/ec2-user/test_run_benchmarks/metrics_config.json -s
 
 
-
-
 cd test_run_benchmarks
 python3 -m venv venv
 source venv/bin/activate
