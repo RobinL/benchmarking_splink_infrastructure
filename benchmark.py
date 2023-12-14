@@ -88,9 +88,19 @@ cloudwatch_policy = {
                 "logs:DescribeLogStreams",
             ],
             "Resource": ["arn:aws:logs:*:*:*"],
-        }
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "cloudwatch:PutMetricData",
+                "ec2:DescribeTags",
+                "ec2:DescribeInstances",
+            ],
+            "Resource": "*",
+        },
     ],
 }
+
 
 # Create and attach the CloudWatch policy
 cw_policy = iam_client.create_policy(
@@ -111,21 +121,28 @@ iam_client.add_role_to_instance_profile(
 
 time.sleep(10)
 
-# Create EC2 instance with the IAM role and user data
+
+# User data script with CloudWatch Agent installation and configuration
+
 user_data_script = """#!/bin/bash
-sudo yum update -y
-sudo yum install -y python3-pip git
+set -e
+trap "shutdown now" EXIT
+# Update and install necessary packages
+yum update -y
+yum install -y amazon-cloudwatch-agent python3-pip git
 
-# Clone the GitHub repository
+cd $HOME
 git clone https://github.com/RobinL/test_run_benchmarks.git
-cd test_run_benchmarks
 
-# Install requirements and run the script
+/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:$HOME/test_run_benchmarks/metrics_config.json -s
+
+cd test_run_benchmarks
 pip3 install -r requirements.txt
 python3 run.py
-
-shutdown now
 """
+
+# The rest of your EC2 instance creation and monitoring code remains the same
+
 
 instance = ec2_client.run_instances(
     ImageId="ami-0cfd0973db26b893b",  # Replace with your AMI ID
@@ -159,7 +176,7 @@ while True:
     else:
         print(f"Instance {instance_id} is currently in state: {current_state}")
 
-    time.sleep(30)  # Wait for 30 seconds before checking again
+    time.sleep(5)  # Wait for 30 seconds before checking again
 
 
 # Cleanup process
