@@ -124,6 +124,8 @@ time.sleep(10)
 
 
 # User data script with CloudWatch Agent installation and configuration
+# Note that the instance seems to need to run for a while for it to actually log anything to
+# the mem used - adding sleep 120 to the script made the mchine pop up in metrics
 
 user_data_script = """#!/bin/bash
 set -e
@@ -137,6 +139,9 @@ cd /home/ec2-user
 git clone https://github.com/RobinL/test_run_benchmarks.git
 
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/home/ec2-user/test_run_benchmarks/metrics_config.json -s
+
+
+
 
 cd test_run_benchmarks
 python3 -m venv venv
