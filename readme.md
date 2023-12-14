@@ -16,3 +16,7 @@ https://github.com/duckdblabs/db-benchmark/pull/54#issuecomment-1809941284
 https://instances.vantage.sh/aws/ec2/c6id.metal
 
 https://instances.vantage.sh/?min_memory=128&min_vcpus=48&min_storage=1000
+
+## Comparison to macbook
+
+>>>For your 2019 MacBook Pro with 6 cores and 12 threads, it's more accurate to compare it to 12 vCPUs in AWS terms. This is because AWS counts a vCPU as a single thread, not a full core. So, if your MacBook Pro has 6 physical cores and each core can run 2 threads (due to hyperthreading), it can be likened to an AWS instance with 12 vCPUs.
