@@ -66,14 +66,40 @@ bucket_policy = {
 }
 
 
-policy = iam_client.create_policy(
+s3_policy = iam_client.create_policy(
     PolicyName=S3_IAM_POLICY_NAME, PolicyDocument=json.dumps(bucket_policy)
 )
 
 
 iam_client.attach_role_policy(
-    RoleName=S3_IAM_ROLE_NAME, PolicyArn=policy["Policy"]["Arn"]
+    RoleName=S3_IAM_ROLE_NAME, PolicyArn=s3_policy["Policy"]["Arn"]
 )
+
+# Additional CloudWatch Logs policy
+cloudwatch_policy = {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:DescribeLogStreams",
+            ],
+            "Resource": ["arn:aws:logs:*:*:*"],
+        }
+    ],
+}
+
+# Create and attach the CloudWatch policy
+cw_policy = iam_client.create_policy(
+    PolicyName="CloudWatchLogsPolicy", PolicyDocument=json.dumps(cloudwatch_policy)
+)
+iam_client.attach_role_policy(
+    RoleName=S3_IAM_ROLE_NAME, PolicyArn=cw_policy["Policy"]["Arn"]
+)
+
 
 # Create an IAM instance profile
 iam_client.create_instance_profile(InstanceProfileName=S3_IAM_INSTANCE_PROFILE_NAME)
@@ -88,11 +114,16 @@ time.sleep(10)
 # Create EC2 instance with the IAM role and user data
 user_data_script = """#!/bin/bash
 sudo yum update -y
-sudo yum install -y python3-pip
-curl -O https://gist.githubusercontent.com/RobinL/ca4d62f7e2c5c6be11c483b88b48c0e0/raw/f351cea46edd4165448e74d0a6bc3bb6078f5785/requirements.txt
+sudo yum install -y python3-pip git
+
+# Clone the GitHub repository
+git clone https://github.com/RobinL/test_run_benchmarks.git
+cd test_run_benchmarks
+
+# Install requirements and run the script
 pip3 install -r requirements.txt
-curl -O https://gist.githubusercontent.com/RobinL/ca4d62f7e2c5c6be11c483b88b48c0e0/raw/f351cea46edd4165448e74d0a6bc3bb6078f5785/run.py
 python3 run.py
+
 shutdown now
 """
 
@@ -134,11 +165,11 @@ while True:
 # Cleanup process
 # Detach the policy from the role
 iam_client.detach_role_policy(
-    RoleName=S3_IAM_ROLE_NAME, PolicyArn=policy["Policy"]["Arn"]
+    RoleName=S3_IAM_ROLE_NAME, PolicyArn=s3_policy["Policy"]["Arn"]
 )
 
 # Delete the policy
-iam_client.delete_policy(PolicyArn=policy["Policy"]["Arn"])
+iam_client.delete_policy(PolicyArn=s3_policy["Policy"]["Arn"])
 
 # Remove the role from the instance profile
 iam_client.remove_role_from_instance_profile(
