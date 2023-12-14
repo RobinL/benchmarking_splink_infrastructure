@@ -123,11 +123,10 @@ time.sleep(10)
 
 
 # User data script with CloudWatch Agent installation and configuration
-
+# trap "shutdown now" EXIT
 user_data_script = """#!/bin/bash
 set -e
-trap "shutdown now" EXIT
-# Update and install necessary packages
+
 yum update -y
 yum install -y amazon-cloudwatch-agent python3-pip git
 
