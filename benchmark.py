@@ -24,7 +24,7 @@ try:
         CreateBucketConfiguration={"LocationConstraint": AWS_REGION},
     )
 except s3_client.exceptions.BucketAlreadyOwnedByYou:
-    print(f"Bucket '{OUTPUT_S3_BUCKET}' already exists in your account.")
+    print(f"Bucket '{OUTPUT_S3_BUCKET}' already exists in yo2ur account.")
 except s3_client.exceptions.BucketAlreadyExists:
     raise Exception(f"Bucket '{OUTPUT_S3_BUCKET}' already exists in another account.")
 
@@ -124,9 +124,11 @@ time.sleep(10)
 
 
 # User data script with CloudWatch Agent installation and configuration
-# trap "shutdown now" EXIT
+
 user_data_script = """#!/bin/bash
 set -e
+
+trap "shutdown now" EXIT
 
 yum update -y
 yum install -y amazon-cloudwatch-agent python3-pip git
