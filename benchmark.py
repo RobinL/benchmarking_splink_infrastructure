@@ -163,13 +163,22 @@ while True:
 
 
 # Cleanup process
-# Detach the policy from the role
+
+# Detach the S3 policy from the role
 iam_client.detach_role_policy(
     RoleName=S3_IAM_ROLE_NAME, PolicyArn=s3_policy["Policy"]["Arn"]
 )
 
-# Delete the policy
+# Delete the S3 policy
 iam_client.delete_policy(PolicyArn=s3_policy["Policy"]["Arn"])
+
+# Detach the CloudWatch Logs policy from the role
+iam_client.detach_role_policy(
+    RoleName=S3_IAM_ROLE_NAME, PolicyArn=cw_policy["Policy"]["Arn"]
+)
+
+# Delete the CloudWatch Logs policy
+iam_client.delete_policy(PolicyArn=cw_policy["Policy"]["Arn"])
 
 # Remove the role from the instance profile
 iam_client.remove_role_from_instance_profile(
@@ -177,7 +186,7 @@ iam_client.remove_role_from_instance_profile(
 )
 
 # Allow time for the role removal to propagate
-time.sleep(5)
+time.sleep(10)
 
 # Delete the IAM role
 iam_client.delete_role(RoleName=S3_IAM_ROLE_NAME)
