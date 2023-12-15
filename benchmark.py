@@ -127,11 +127,11 @@ time.sleep(10)
 # Note that the instance seems to need to run for a while for it to actually log anything to
 # the mem used - adding sleep 120 to the script made the mchine pop up in metrics
 
-# trap "shutdown now" EXIT
+
 user_data_script = """#!/bin/bash
 set -e
 
-
+trap "shutdown now" EXIT
 
 yum update -y
 yum install -y amazon-cloudwatch-agent python3-pip git
