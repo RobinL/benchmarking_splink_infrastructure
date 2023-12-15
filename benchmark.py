@@ -29,6 +29,47 @@ except s3_client.exceptions.BucketAlreadyOwnedByYou:
 except s3_client.exceptions.BucketAlreadyExists:
     raise Exception(f"Bucket '{OUTPUT_S3_BUCKET}' already exists in another account.")
 
+
+# Function to clean up existing IAM resources
+def cleanup_iam_resources():
+    # Detach and delete policies from the role
+    try:
+        attached_policies = iam_client.list_attached_role_policies(
+            RoleName=S3_IAM_ROLE_NAME
+        )["AttachedPolicies"]
+        for policy in attached_policies:
+            iam_client.detach_role_policy(
+                RoleName=S3_IAM_ROLE_NAME, PolicyArn=policy["PolicyArn"]
+            )
+            iam_client.delete_policy(PolicyArn=policy["PolicyArn"])
+    except ClientError as e:
+        if e.response["Error"]["Code"] != "NoSuchEntity":
+            raise e
+
+    # Remove role from instance profile and delete the profile
+    try:
+        iam_client.remove_role_from_instance_profile(
+            InstanceProfileName=S3_IAM_INSTANCE_PROFILE_NAME, RoleName=S3_IAM_ROLE_NAME
+        )
+        iam_client.delete_instance_profile(
+            InstanceProfileName=S3_IAM_INSTANCE_PROFILE_NAME
+        )
+    except ClientError as e:
+        if e.response["Error"]["Code"] != "NoSuchEntity":
+            raise e
+
+    # Delete the role
+    try:
+        iam_client.delete_role(RoleName=S3_IAM_ROLE_NAME)
+    except ClientError as e:
+        if e.response["Error"]["Code"] != "NoSuchEntity":
+            raise e
+
+
+# Call the cleanup function at the beginning
+cleanup_iam_resources()
+
+
 # Create an IAM role for EC2
 assume_role_policy_document = json.dumps(
     {
@@ -43,123 +84,78 @@ assume_role_policy_document = json.dumps(
     }
 )
 
-
-def create_or_get_role(role_name, policy_document):
-    try:
-        role = iam_client.create_role(
-            RoleName=role_name, AssumeRolePolicyDocument=policy_document
-        )
-    except ClientError as e:
-        if e.response["Error"]["Code"] == "EntityAlreadyExists":
-            role = iam_client.get_role(RoleName=role_name)
-        else:
-            raise e
-    return role
-
-
-# Function to create or get an IAM policy
-def create_or_get_policy(policy_name, policy_document):
-    try:
-        policy = iam_client.create_policy(
-            PolicyName=policy_name, PolicyDocument=policy_document
-        )
-    except ClientError as e:
-        if e.response["Error"]["Code"] == "EntityAlreadyExists":
-            policy = iam_client.get_policy(
-                PolicyArn=f"arn:aws:iam::{iam_client.get_caller_identity()['Account']}:policy/{policy_name}"
-            )
-        else:
-            raise e
-    return policy
-
-
-# Function to create or get an IAM instance profile
-def create_or_get_instance_profile(profile_name):
-    try:
-        profile = iam_client.create_instance_profile(InstanceProfileName=profile_name)
-    except ClientError as e:
-        if e.response["Error"]["Code"] == "EntityAlreadyExists":
-            profile = iam_client.get_instance_profile(InstanceProfileName=profile_name)
-        else:
-            raise e
-    return profile
-
-
-role = create_or_get_role(S3_IAM_ROLE_NAME, assume_role_policy_document)
-
-
-# Define a custom policy for accessing the specific S3 bucket
-s3_policy_document = json.dumps(
-    {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Action": [
-                    "s3:GetObject",
-                    "s3:PutObject",
-                    "s3:DeleteObject",
-                    "s3:ListBucket",
-                ],
-                "Resource": [
-                    f"arn:aws:s3:::{OUTPUT_S3_BUCKET}",
-                    f"arn:aws:s3:::{OUTPUT_S3_BUCKET}/*",
-                ],
-            }
-        ],
-    }
+role = iam_client.create_role(
+    RoleName=S3_IAM_ROLE_NAME, AssumeRolePolicyDocument=assume_role_policy_document
 )
 
+# Define a custom policy for accessing the specific S3 bucket
+bucket_policy = {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:DeleteObject",
+                "s3:ListBucket",
+            ],
+            "Resource": [
+                f"arn:aws:s3:::{OUTPUT_S3_BUCKET}",
+                f"arn:aws:s3:::{OUTPUT_S3_BUCKET}/*",
+            ],
+        }
+    ],
+}
 
-s3_policy = create_or_get_policy(S3_IAM_POLICY_NAME, s3_policy_document)
+
+s3_policy = iam_client.create_policy(
+    PolicyName=S3_IAM_POLICY_NAME, PolicyDocument=json.dumps(bucket_policy)
+)
+
 
 iam_client.attach_role_policy(
     RoleName=S3_IAM_ROLE_NAME, PolicyArn=s3_policy["Policy"]["Arn"]
 )
 
-
 # Additional CloudWatch Logs policy
-cloudwatch_policy = json.dumps(
-    {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Action": [
-                    "logs:CreateLogGroup",
-                    "logs:CreateLogStream",
-                    "logs:PutLogEvents",
-                    "logs:DescribeLogStreams",
-                ],
-                "Resource": ["arn:aws:logs:*:*:*"],
-            },
-            {
-                "Effect": "Allow",
-                "Action": [
-                    "cloudwatch:PutMetricData",
-                    "ec2:DescribeTags",
-                    "ec2:DescribeInstances",
-                ],
-                "Resource": "*",
-            },
-        ],
-    }
-)
+cloudwatch_policy = {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "logs:CreateLogGroup",
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+                "logs:DescribeLogStreams",
+            ],
+            "Resource": ["arn:aws:logs:*:*:*"],
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "cloudwatch:PutMetricData",
+                "ec2:DescribeTags",
+                "ec2:DescribeInstances",
+            ],
+            "Resource": "*",
+        },
+    ],
+}
 
 
 # Create and attach the CloudWatch policy
-
-cw_policy = create_or_get_policy("CloudWatchLogsPolicy", cloudwatch_policy)
-
-
+cw_policy = iam_client.create_policy(
+    PolicyName="CloudWatchLogsPolicy", PolicyDocument=json.dumps(cloudwatch_policy)
+)
 iam_client.attach_role_policy(
     RoleName=S3_IAM_ROLE_NAME, PolicyArn=cw_policy["Policy"]["Arn"]
 )
 
 
 # Create an IAM instance profile
-instance_profile = create_or_get_instance_profile(S3_IAM_INSTANCE_PROFILE_NAME)
-
+iam_client.create_instance_profile(InstanceProfileName=S3_IAM_INSTANCE_PROFILE_NAME)
 
 # Add the role to the instance profile
 iam_client.add_role_to_instance_profile(
