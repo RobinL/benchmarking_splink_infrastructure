@@ -149,8 +149,6 @@ pytest benchmarks/test_splink_50k_synthetic.py  --benchmark-json benchmarking_re
 
 """
 
-# The rest of your EC2 instance creation and monitoring code remains the same
-
 
 instance = ec2_client.run_instances(
     ImageId="ami-0cfd0973db26b893b",  # Replace with your AMI ID
