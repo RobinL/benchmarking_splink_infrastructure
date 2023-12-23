@@ -127,27 +127,14 @@ time.sleep(10)
 # Note that the instance seems to need to run for a while for it to actually log anything to
 # the mem used - adding sleep 120 to the script made the mchine pop up in metrics
 
-user_data_script = """#!/bin/bash
-set -e
 
-trap "shutdown now" EXIT
-
-yum update -y
-yum install -y amazon-cloudwatch-agent python3-pip git
-
-cd /home/ec2-user
-git clone https://github.com/RobinL/test_run_benchmarks.git
-
-/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/home/ec2-user/test_run_benchmarks/metrics_config.json -s
+def read_user_data_script(file_path):
+    with open(file_path, "r") as file:
+        return file.read()
 
 
-cd test_run_benchmarks
-python3 -m venv venv
-source venv/bin/activate
-pip3 install -r requirements.txt
-python3 run.py
-deactivate
-"""
+user_data_file_path = "user_data_clone_run_benchmarks.sh"
+user_data_script = read_user_data_script(user_data_file_path)
 
 # The rest of your EC2 instance creation and monitoring code remains the same
 
