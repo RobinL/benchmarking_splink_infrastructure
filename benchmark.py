@@ -2,13 +2,14 @@ import json
 import time
 
 import boto3
+from botocore.exceptions import ClientError
 
 OUTPUT_S3_BUCKET = "robinsplinkbenchmarks"
 S3_IAM_ROLE_NAME = "EC2S3RobinBenchmarksRole"
 S3_IAM_POLICY_NAME = "S3AccessRobinSplinkBenchmarks"
 S3_IAM_INSTANCE_PROFILE_NAME = "EC2S3RobinBenchmarksInstanceProfile"
 AWS_REGION = "eu-west-2"
-INSTANCE_TYPE = "t2.micro"
+INSTANCE_TYPE = "c5.xlarge"
 
 # Initialize boto3 clients with London region
 s3_client = boto3.client("s3", region_name=AWS_REGION)
@@ -24,9 +25,50 @@ try:
         CreateBucketConfiguration={"LocationConstraint": AWS_REGION},
     )
 except s3_client.exceptions.BucketAlreadyOwnedByYou:
-    print(f"Bucket '{OUTPUT_S3_BUCKET}' already exists in yo2ur account.")
+    print(f"Bucket '{OUTPUT_S3_BUCKET}' already exists in your account.")
 except s3_client.exceptions.BucketAlreadyExists:
     raise Exception(f"Bucket '{OUTPUT_S3_BUCKET}' already exists in another account.")
+
+
+# Function to clean up existing IAM resources
+def cleanup_iam_resources():
+    # Detach and delete policies from the role
+    try:
+        attached_policies = iam_client.list_attached_role_policies(
+            RoleName=S3_IAM_ROLE_NAME
+        )["AttachedPolicies"]
+        for policy in attached_policies:
+            iam_client.detach_role_policy(
+                RoleName=S3_IAM_ROLE_NAME, PolicyArn=policy["PolicyArn"]
+            )
+            iam_client.delete_policy(PolicyArn=policy["PolicyArn"])
+    except ClientError as e:
+        if e.response["Error"]["Code"] != "NoSuchEntity":
+            raise e
+
+    # Remove role from instance profile and delete the profile
+    try:
+        iam_client.remove_role_from_instance_profile(
+            InstanceProfileName=S3_IAM_INSTANCE_PROFILE_NAME, RoleName=S3_IAM_ROLE_NAME
+        )
+        iam_client.delete_instance_profile(
+            InstanceProfileName=S3_IAM_INSTANCE_PROFILE_NAME
+        )
+    except ClientError as e:
+        if e.response["Error"]["Code"] != "NoSuchEntity":
+            raise e
+
+    # Delete the role
+    try:
+        iam_client.delete_role(RoleName=S3_IAM_ROLE_NAME)
+    except ClientError as e:
+        if e.response["Error"]["Code"] != "NoSuchEntity":
+            raise e
+
+
+# Call the cleanup function at the beginning
+cleanup_iam_resources()
+
 
 # Create an IAM role for EC2
 assume_role_policy_document = json.dumps(
@@ -127,6 +169,7 @@ time.sleep(10)
 # Note that the instance seems to need to run for a while for it to actually log anything to
 # the mem used - adding sleep 120 to the script made the mchine pop up in metrics
 
+
 user_data_script = """#!/bin/bash
 set -e
 
@@ -136,20 +179,17 @@ yum update -y
 yum install -y amazon-cloudwatch-agent python3-pip git
 
 cd /home/ec2-user
-git clone https://github.com/RobinL/test_run_benchmarks.git
+git clone -b pytest_benchmark https://github.com/RobinL/test_run_benchmarks.git
 
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/home/ec2-user/test_run_benchmarks/metrics_config.json -s
-
 
 cd test_run_benchmarks
 python3 -m venv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
 python3 run.py
-deactivate
-"""
 
-# The rest of your EC2 instance creation and monitoring code remains the same
+"""
 
 
 instance = ec2_client.run_instances(
