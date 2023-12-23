@@ -2,13 +2,18 @@ import json
 import time
 
 import boto3
+from botocore.exceptions import ClientError
 
 OUTPUT_S3_BUCKET = "robinsplinkbenchmarks"
 S3_IAM_ROLE_NAME = "EC2S3RobinBenchmarksRole"
 S3_IAM_POLICY_NAME = "S3AccessRobinSplinkBenchmarks"
 S3_IAM_INSTANCE_PROFILE_NAME = "EC2S3RobinBenchmarksInstanceProfile"
 AWS_REGION = "eu-west-2"
-INSTANCE_TYPE = "t2.micro"
+# INSTANCE_TYPE = "c5.xlarge"  # x86_64
+INSTANCE_TYPE = "c6gd.2xlarge"  # arm64 $0.31
+
+# IMAGEID = "ami-0cfd0973db26b893b"  # x86_64
+IMAGEID = "ami-05cae8d4948d6f5b7"  # arm64
 
 # Initialize boto3 clients with London region
 s3_client = boto3.client("s3", region_name=AWS_REGION)
@@ -27,6 +32,47 @@ except s3_client.exceptions.BucketAlreadyOwnedByYou:
     print(f"Bucket '{OUTPUT_S3_BUCKET}' already exists in yo2ur account.")
 except s3_client.exceptions.BucketAlreadyExists:
     raise Exception(f"Bucket '{OUTPUT_S3_BUCKET}' already exists in another account.")
+
+
+# Function to clean up existing IAM resources
+def cleanup_iam_resources():
+    # Detach and delete policies from the role
+    try:
+        attached_policies = iam_client.list_attached_role_policies(
+            RoleName=S3_IAM_ROLE_NAME
+        )["AttachedPolicies"]
+        for policy in attached_policies:
+            iam_client.detach_role_policy(
+                RoleName=S3_IAM_ROLE_NAME, PolicyArn=policy["PolicyArn"]
+            )
+            iam_client.delete_policy(PolicyArn=policy["PolicyArn"])
+    except ClientError as e:
+        if e.response["Error"]["Code"] != "NoSuchEntity":
+            raise e
+
+    # Remove role from instance profile and delete the profile
+    try:
+        iam_client.remove_role_from_instance_profile(
+            InstanceProfileName=S3_IAM_INSTANCE_PROFILE_NAME, RoleName=S3_IAM_ROLE_NAME
+        )
+        iam_client.delete_instance_profile(
+            InstanceProfileName=S3_IAM_INSTANCE_PROFILE_NAME
+        )
+    except ClientError as e:
+        if e.response["Error"]["Code"] != "NoSuchEntity":
+            raise e
+
+    # Delete the role
+    try:
+        iam_client.delete_role(RoleName=S3_IAM_ROLE_NAME)
+    except ClientError as e:
+        if e.response["Error"]["Code"] != "NoSuchEntity":
+            raise e
+
+
+# Call the cleanup function at the beginning
+cleanup_iam_resources()
+
 
 # Create an IAM role for EC2
 assume_role_policy_document = json.dumps(
@@ -140,7 +186,7 @@ user_data_script = read_user_data_script(user_data_file_path)
 
 
 instance = ec2_client.run_instances(
-    ImageId="ami-0cfd0973db26b893b",  # Replace with your AMI ID
+    ImageId=IMAGEID,
     InstanceType=INSTANCE_TYPE,
     MinCount=1,
     MaxCount=1,
