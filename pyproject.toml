@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.10"
 boto3 = "^1.33.13"
 ipykernel = "^6.27.1"
+duckdb = "^0.9.2"
 
 
 [build-system]
