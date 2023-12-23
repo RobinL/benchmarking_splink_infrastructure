@@ -16,5 +16,15 @@ cd run_splink_benchmarks_in_ec2
 python3 -m venv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
+pip uninstall splink
+pip3 install git+https://github.com/moj-analytical-services/splink.git@faster_duckdb
+
 python3 run.py
+
+
+pip uninstall splink
+pip3 install git+https://github.com/moj-analytical-services/splink.git@faster_duckdb
+
+python3 run.py
+
 deactivate
