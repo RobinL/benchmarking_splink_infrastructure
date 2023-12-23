@@ -74,46 +74,6 @@ def cleanup_iam_resources():
 cleanup_iam_resources()
 
 
-# Function to clean up existing IAM resources
-def cleanup_iam_resources():
-    # Detach and delete policies from the role
-    try:
-        attached_policies = iam_client.list_attached_role_policies(
-            RoleName=S3_IAM_ROLE_NAME
-        )["AttachedPolicies"]
-        for policy in attached_policies:
-            iam_client.detach_role_policy(
-                RoleName=S3_IAM_ROLE_NAME, PolicyArn=policy["PolicyArn"]
-            )
-            iam_client.delete_policy(PolicyArn=policy["PolicyArn"])
-    except ClientError as e:
-        if e.response["Error"]["Code"] != "NoSuchEntity":
-            raise e
-
-    # Remove role from instance profile and delete the profile
-    try:
-        iam_client.remove_role_from_instance_profile(
-            InstanceProfileName=S3_IAM_INSTANCE_PROFILE_NAME, RoleName=S3_IAM_ROLE_NAME
-        )
-        iam_client.delete_instance_profile(
-            InstanceProfileName=S3_IAM_INSTANCE_PROFILE_NAME
-        )
-    except ClientError as e:
-        if e.response["Error"]["Code"] != "NoSuchEntity":
-            raise e
-
-    # Delete the role
-    try:
-        iam_client.delete_role(RoleName=S3_IAM_ROLE_NAME)
-    except ClientError as e:
-        if e.response["Error"]["Code"] != "NoSuchEntity":
-            raise e
-
-
-# Call the cleanup function at the beginning
-cleanup_iam_resources()
-
-
 # Create an IAM role for EC2
 assume_role_policy_document = json.dumps(
     {
