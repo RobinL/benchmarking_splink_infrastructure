@@ -9,11 +9,11 @@ S3_IAM_ROLE_NAME = "EC2S3RobinBenchmarksRole"
 S3_IAM_POLICY_NAME = "S3AccessRobinSplinkBenchmarks"
 S3_IAM_INSTANCE_PROFILE_NAME = "EC2S3RobinBenchmarksInstanceProfile"
 AWS_REGION = "eu-west-2"
-INSTANCE_TYPE = "c5.xlarge"  # x86_64
-# INSTANCE_TYPE = "c6gd.2xlarge"  # arm64 $0.31
+# INSTANCE_TYPE = "c5.xlarge"  # x86_64
+INSTANCE_TYPE = "c6gd.2xlarge"  # arm64 $0.31
 
-IMAGEID = "ami-0cfd0973db26b893b"  # x86_64
-# IMAGEID = "ami-05cae8d4948d6f5b7"  # arm64
+# IMAGEID = "ami-0cfd0973db26b893b"  # x86_64
+IMAGEID = "ami-05cae8d4948d6f5b7"  # arm64
 
 # Initialize boto3 clients with London region
 s3_client = boto3.client("s3", region_name=AWS_REGION)

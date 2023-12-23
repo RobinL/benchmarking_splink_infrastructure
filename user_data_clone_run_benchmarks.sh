@@ -17,10 +17,10 @@ python3 -m venv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
 
-python3 run.py --max_pairs "1e7" --run_label "release"
+python3 run.py --max_pairs "1.1e8" --run_label "release"
 pip3 uninstall splink -y
 pip3 install -I git+https://github.com/moj-analytical-services/splink.git@faster_duckdb
 
-python3 run.py --max_pairs "1e7" --run_label "faster_duckdb"
+python3 run.py --max_pairs "1.1e8" --run_label "faster_duckdb"
 
 deactivate
