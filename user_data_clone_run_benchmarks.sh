@@ -17,10 +17,10 @@ python3 -m venv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
 
-python3 run.py --max_pairs 1e5 --run_label "my_test_run"
+python3 run.py --max_pairs "1e5" --run_label "my_test_run"
 
 pip3 install git+https://github.com/moj-analytical-services/splink.git@faster_duckdb
 
-python3 run.py --max_pairs 1e7 --run_label "other"
+python3 run.py --max_pairs "1e7" --run_label "other"
 
 deactivate
