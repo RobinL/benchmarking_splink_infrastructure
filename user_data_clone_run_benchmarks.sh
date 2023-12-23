@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-trap "shutdown now" EXIT
+# trap "shutdown now" EXIT
 
 yum update -y
 yum install -y amazon-cloudwatch-agent python3-pip git
@@ -17,10 +17,10 @@ python3 -m venv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
 
-python3 run.py --max_pairs "1e8" --run_label "my_test_run"
+python3 run.py --max_pairs "1e7" --run_label "release"
+pip3 uninstall splink -y
+pip3 install -I git+https://github.com/moj-analytical-services/splink.git@faster_duckdb
 
-pip3 install git+https://github.com/moj-analytical-services/splink.git@faster_duckdb
-
-python3 run.py --max_pairs "1e8" --run_label "other"
+python3 run.py --max_pairs "1e7" --run_label "faster_duckdb"
 
 deactivate
