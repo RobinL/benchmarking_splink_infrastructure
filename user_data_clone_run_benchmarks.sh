@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# trap "shutdown now" EXIT
+trap "shutdown now" EXIT
 
 yum update -y
 yum install -y amazon-cloudwatch-agent python3-pip git
