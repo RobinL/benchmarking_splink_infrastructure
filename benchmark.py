@@ -1,5 +1,6 @@
 import json
 import time
+from datetime import datetime, timedelta
 
 import boto3
 from botocore.exceptions import ClientError
@@ -19,6 +20,7 @@ IMAGEID = "ami-05cae8d4948d6f5b7"  # arm64
 s3_client = boto3.client("s3", region_name=AWS_REGION)
 iam_client = boto3.client("iam", region_name=AWS_REGION)
 ec2_client = boto3.client("ec2", region_name=AWS_REGION)
+cw_client = boto3.client("cloudwatch", region_name=AWS_REGION)
 
 start_time = time.time()
 
@@ -184,6 +186,8 @@ user_data_script = read_user_data_script(user_data_file_path)
 
 # The rest of your EC2 instance creation and monitoring code remains the same
 
+metrics_collection_start_time = datetime.utcnow()
+
 
 instance = ec2_client.run_instances(
     ImageId=IMAGEID,
@@ -218,6 +222,120 @@ while True:
         print(f"Instance {instance_id} is currently in state: {current_state}")
 
     time.sleep(5)  # Wait for 30 seconds before checking again
+
+metrics_collection_end_time = datetime.utcnow()
+
+metric_queries = [
+    # Query for CPUUtilization
+    {
+        "Id": "ec2_cpu_utilization",
+        "MetricStat": {
+            "Metric": {
+                "Namespace": "AWS/EC2",
+                "MetricName": "CPUUtilization",
+                "Dimensions": [{"Name": "InstanceId", "Value": instance_id}],
+            },
+            "Period": 5,
+            "Stat": "Average",
+        },
+    },
+    {
+        "Id": "cw_agent_cpu_usage_user",
+        "MetricStat": {
+            "Metric": {
+                "Namespace": "CWAgent",
+                "MetricName": "cpu_usage_user",
+                "Dimensions": [{"Name": "InstanceId", "Value": instance_id}],
+            },
+            "Period": 5,
+            "Stat": "Average",
+        },
+    },
+    {
+        "Id": "cw_agent_cpu_usage_system",
+        "MetricStat": {
+            "Metric": {
+                "Namespace": "CWAgent",
+                "MetricName": "cpu_usage_system",
+                "Dimensions": [{"Name": "InstanceId", "Value": instance_id}],
+            },
+            "Period": 5,
+            "Stat": "Average",
+        },
+    },
+    {
+        "Id": "cw_agent_mem_used_percent",
+        "MetricStat": {
+            "Metric": {
+                "Namespace": "CWAgent",
+                "MetricName": "mem_used_percent",
+                "Dimensions": [{"Name": "InstanceId", "Value": instance_id}],
+            },
+            "Period": 5,
+            "Stat": "Average",
+        },
+    },
+]
+
+
+response = cw_client.get_metric_data(
+    MetricDataQueries=metric_queries,
+    StartTime=metrics_collection_start_time - timedelta(minutes=3),
+    EndTime=metrics_collection_end_time + timedelta(minutes=3),
+)
+response
+
+
+# Query parameters
+metric_name = "mem_used_percent"
+namespace = "CWAgent"  # Adjust if your metric is under a different namespace
+dimensions = [
+    {"Name": "InstanceId", "Value": instance_id},  # Replace with your instance ID
+    {"Name": "InstanceType", "Value": INSTANCE_TYPE},  # Replace with your instance type
+]
+
+# Get metric data
+response = cw_client.get_metric_data(
+    MetricDataQueries=[
+        {
+            "Id": "query1",
+            "MetricStat": {
+                "Metric": {
+                    "Namespace": namespace,
+                    "MetricName": metric_name,
+                    "Dimensions": dimensions,
+                },
+                "Period": 5,  # 5-second intervals
+                "Stat": "Average",  # You can change this to 'Sum', 'Minimum', etc., as needed
+            },
+            "ReturnData": True,
+        },
+        {
+            "Id": "query2",
+            "MetricStat": {
+                "Metric": {
+                    "Namespace": namespace,
+                    "MetricName": "cpu_usage_user",
+                    "Dimensions": dimensions,
+                },
+                "Period": 5,  # 5-second intervals
+                "Stat": "Average",  # You can change this to 'Sum', 'Minimum', etc., as needed
+            },
+            "ReturnData": True,
+        },
+    ],
+    StartTime=metrics_collection_start_time,
+    EndTime=metrics_collection_end_time,
+)
+
+# Process the response as needed
+
+print(response)
+
+
+# Write metrics data to a file
+with open("metrics_data.json", "w") as file:
+    json.dump(response, file, indent=4)
 
 
 # Cleanup process
