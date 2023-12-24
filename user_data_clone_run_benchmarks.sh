@@ -4,7 +4,11 @@ set -e
 trap "shutdown now" EXIT
 
 yum update -y
-yum install -y amazon-cloudwatch-agent python3-pip git
+yum install -y amazon-cloudwatch-agent python3-pip git at
+
+systemctl start atd
+echo "shutdown -h now" | at now + 2 hours
+
 
 cd /home/ec2-user
 git clone https://github.com/RobinL/run_splink_benchmarks_in_ec2.git
