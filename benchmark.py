@@ -225,66 +225,6 @@ while True:
 
 metrics_collection_end_time = datetime.utcnow()
 
-metric_queries = [
-    # Query for CPUUtilization
-    {
-        "Id": "ec2_cpu_utilization",
-        "MetricStat": {
-            "Metric": {
-                "Namespace": "AWS/EC2",
-                "MetricName": "CPUUtilization",
-                "Dimensions": [{"Name": "InstanceId", "Value": instance_id}],
-            },
-            "Period": 5,
-            "Stat": "Average",
-        },
-    },
-    {
-        "Id": "cw_agent_cpu_usage_user",
-        "MetricStat": {
-            "Metric": {
-                "Namespace": "CWAgent",
-                "MetricName": "cpu_usage_user",
-                "Dimensions": [{"Name": "InstanceId", "Value": instance_id}],
-            },
-            "Period": 5,
-            "Stat": "Average",
-        },
-    },
-    {
-        "Id": "cw_agent_cpu_usage_system",
-        "MetricStat": {
-            "Metric": {
-                "Namespace": "CWAgent",
-                "MetricName": "cpu_usage_system",
-                "Dimensions": [{"Name": "InstanceId", "Value": instance_id}],
-            },
-            "Period": 5,
-            "Stat": "Average",
-        },
-    },
-    {
-        "Id": "cw_agent_mem_used_percent",
-        "MetricStat": {
-            "Metric": {
-                "Namespace": "CWAgent",
-                "MetricName": "mem_used_percent",
-                "Dimensions": [{"Name": "InstanceId", "Value": instance_id}],
-            },
-            "Period": 5,
-            "Stat": "Average",
-        },
-    },
-]
-
-
-response = cw_client.get_metric_data(
-    MetricDataQueries=metric_queries,
-    StartTime=metrics_collection_start_time - timedelta(minutes=3),
-    EndTime=metrics_collection_end_time + timedelta(minutes=3),
-)
-response
-
 
 # Query parameters
 metric_name = "mem_used_percent"
@@ -298,15 +238,27 @@ dimensions = [
 response = cw_client.get_metric_data(
     MetricDataQueries=[
         {
+            "Id": "ec2_cpu_utilization",
+            "MetricStat": {
+                "Metric": {
+                    "Namespace": "AWS/EC2",
+                    "MetricName": "CPUUtilization",
+                    "Dimensions": dimensions,
+                },
+                "Period": 5,
+                "Stat": "Average",
+            },
+        },
+        {
             "Id": "query1",
             "MetricStat": {
                 "Metric": {
                     "Namespace": namespace,
-                    "MetricName": metric_name,
+                    "MetricName": "mem_used_percent",
                     "Dimensions": dimensions,
                 },
-                "Period": 5,  # 5-second intervals
-                "Stat": "Average",  # You can change this to 'Sum', 'Minimum', etc., as needed
+                "Period": 5,
+                "Stat": "Average",
             },
             "ReturnData": True,
         },
@@ -318,8 +270,8 @@ response = cw_client.get_metric_data(
                     "MetricName": "cpu_usage_user",
                     "Dimensions": dimensions,
                 },
-                "Period": 5,  # 5-second intervals
-                "Stat": "Average",  # You can change this to 'Sum', 'Minimum', etc., as needed
+                "Period": 5,
+                "Stat": "Average",
             },
             "ReturnData": True,
         },
@@ -328,14 +280,17 @@ response = cw_client.get_metric_data(
     EndTime=metrics_collection_end_time,
 )
 
-# Process the response as needed
 
-print(response)
+def custom_json_serializer(obj):
+    """Custom JSON serializer for objects not serializable by default json code"""
+    if isinstance(obj, datetime):
+        return obj.isoformat()
+    raise TypeError(f"Type {type(obj)} not serializable")
 
 
-# Write metrics data to a file
+# Use the custom serializer in the json.dump call
 with open("metrics_data.json", "w") as file:
-    json.dump(response, file, indent=4)
+    json.dump(response, file, indent=4, default=custom_json_serializer)
 
 
 # Cleanup process
