@@ -227,7 +227,7 @@ metrics_collection_end_time = datetime.utcnow()
 
 
 # Query parameters
-metric_name = "mem_used_percent"
+
 namespace = "CWAgent"  # Adjust if your metric is under a different namespace
 dimensions = [
     {"Name": "InstanceId", "Value": instance_id},  # Replace with your instance ID
@@ -238,19 +238,8 @@ dimensions = [
 response = cw_client.get_metric_data(
     MetricDataQueries=[
         {
-            "Id": "ec2_cpu_utilization",
-            "MetricStat": {
-                "Metric": {
-                    "Namespace": "AWS/EC2",
-                    "MetricName": "CPUUtilization",
-                    "Dimensions": dimensions,
-                },
-                "Period": 5,
-                "Stat": "Average",
-            },
-        },
-        {
-            "Id": "query1",
+            "Id": "mem_used_query",
+            "Label": f"{instance_id=} - {INSTANCE_TYPE=} - Memory Used %",
             "MetricStat": {
                 "Metric": {
                     "Namespace": namespace,
@@ -263,12 +252,13 @@ response = cw_client.get_metric_data(
             "ReturnData": True,
         },
         {
-            "Id": "query2",
+            "Id": "user_cpu_used_query",
+            "Label": f"{instance_id=} - {INSTANCE_TYPE=} - CPU User %",
             "MetricStat": {
                 "Metric": {
                     "Namespace": namespace,
                     "MetricName": "cpu_usage_user",
-                    "Dimensions": dimensions,
+                    "Dimensions": dimensions + [{"Name": "cpu", "Value": "cpu-total"}],
                 },
                 "Period": 5,
                 "Stat": "Average",
