@@ -10,39 +10,36 @@ def _create_metric_queries(instance_id, instance_type):
             "Value": instance_type,
         },
     ]
-    return (
-        [
-            {
-                "Id": "mem_used_query",
-                "Label": f"{instance_id=} - {instance_type=} - Memory Used %",
-                "MetricStat": {
-                    "Metric": {
-                        "Namespace": "CWAgent",
-                        "MetricName": "mem_used_percent",
-                        "Dimensions": dimensions,
-                    },
-                    "Period": 5,
-                    "Stat": "Average",
+    return [
+        {
+            "Id": "mem_used_query",
+            "Label": f"{instance_id=} - {instance_type=} - Memory Used %",
+            "MetricStat": {
+                "Metric": {
+                    "Namespace": "CWAgent",
+                    "MetricName": "mem_used_percent",
+                    "Dimensions": dimensions,
                 },
-                "ReturnData": True,
+                "Period": 5,
+                "Stat": "Average",
             },
-            {
-                "Id": "user_cpu_used_query",
-                "Label": f"{instance_id=} - {instance_type=} - CPU User %",
-                "MetricStat": {
-                    "Metric": {
-                        "Namespace": "CWAgent",
-                        "MetricName": "cpu_usage_user",
-                        "Dimensions": dimensions
-                        + [{"Name": "cpu", "Value": "cpu-total"}],
-                    },
-                    "Period": 5,
-                    "Stat": "Average",
+            "ReturnData": True,
+        },
+        {
+            "Id": "user_cpu_used_query",
+            "Label": f"{instance_id=} - {instance_type=} - CPU User %",
+            "MetricStat": {
+                "Metric": {
+                    "Namespace": "CWAgent",
+                    "MetricName": "cpu_usage_user",
+                    "Dimensions": dimensions + [{"Name": "cpu", "Value": "cpu-total"}],
                 },
-                "ReturnData": True,
+                "Period": 5,
+                "Stat": "Average",
             },
-        ],
-    )
+            "ReturnData": True,
+        },
+    ]
 
 
 def _custom_json_serializer(obj):
