@@ -54,7 +54,6 @@ def read_user_data_script(file_path):
 user_data_file_path = "user_data_clone_run_benchmarks.sh"
 user_data_script = read_user_data_script(user_data_file_path)
 
-# The rest of your EC2 instance creation and monitoring code remains the same
 
 metrics_collection_start_time = datetime.utcnow()
 
