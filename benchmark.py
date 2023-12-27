@@ -42,8 +42,8 @@ create_all_iam_resources(
     OUTPUT_S3_BUCKET,
 )
 
-
-time.sleep(5)
+# Allow time for propogation delays
+time.sleep(10)
 
 
 def read_user_data_script(file_path):
@@ -82,10 +82,13 @@ response = get_metric_data_from_ec2_run(
     metrics_collection_end_time=metrics_collection_end_time,
 )
 
-
 save_metrics_response_to_json(response, "metrics_data.json")
 
 cleanup_iam_resources(iam_client, EC2_IAM_ROLE_NAME, EC2_IAM_INSTANCE_PROFILE_NAME)
 
 end_time = time.time()
 print(f"Total time taken: {end_time - start_time:.2f} seconds")
+
+
+# Probably want to grab and print the benchmarking results json here
+# for convenience
