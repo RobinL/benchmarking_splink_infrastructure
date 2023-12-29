@@ -105,6 +105,8 @@ def create_coloudwatch_policy_and_attach_to_role(iam_client, role_name, policy_n
             {
                 "Effect": "Allow",
                 "Action": [
+                    "cloudwatch:GetMetricData",
+                    "cloudwatch:ListMetrics",
                     "cloudwatch:PutMetricData",
                     "ec2:DescribeTags",
                     "ec2:DescribeInstances",

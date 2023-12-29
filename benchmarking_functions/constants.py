@@ -6,7 +6,7 @@ CLOUDWATCH_IAM_POLICY_NAME = "CloudWatchAccessRobinSplinkBenchmarks"
 EC2_IAM_INSTANCE_PROFILE_NAME = "EC2RobinBenchmarksInstanceProfile"
 
 IMAGEID = "ami-05cae8d4948d6f5b7"  # arm64
-INSTANCE_TYPE = "c6gd.2xlarge"  # arm64
+INSTANCE_TYPE = "c6gd.xlarge"  # arm64
 
 # INSTANCE_TYPE = "c5.xlarge"  # x86_64
 # IMAGEID = "ami-0cfd0973db26b893b"  # x86_64
