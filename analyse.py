@@ -1,8 +1,10 @@
 import os
 import shutil
 
+import altair as alt
 import boto3
 import duckdb
+import pandas as pd
 from botocore.exceptions import NoCredentialsError
 
 
@@ -64,3 +66,82 @@ query = f"""
     FROM read_json_auto('{json_folder}/*.json')
     ORDER BY datetime DESC"""
 conn.execute(query).df()
+
+
+json_folder = "benchmarking_json"
+
+query = f"""
+    with i1 as (
+        SELECT
+            datetime,
+            custom.run_label as run_label,
+            custom.max_pairs as max_pairs,
+            benchmarks[1].name as benchmark_name,
+            benchmarks[1].stats.min as min_time,
+            benchmarks[1].stats.mean as mean_time,
+            machine_info.cpu.count as cpu_count,
+            machine_info.cpu.brand_raw as cpu_brand_raw,
+
+            unnest(list_zip(
+                custom.metrics.MetricDataResults[1].Timestamps,
+                custom.metrics.MetricDataResults[1].Values,
+                custom.metrics.MetricDataResults[2].Timestamps,
+                custom.metrics.MetricDataResults[2].Values
+            )) as zipped,
+
+
+        FROM read_json_auto('{json_folder}/*.json')
+        where datetime = '2023-12-30T19:43:33.685711'
+        ORDER BY datetime DESC
+    )
+    select
+        datetime,
+        run_label,
+        max_pairs,
+        benchmark_name,
+        min_time,
+        mean_time,
+        cpu_count,
+        cpu_brand_raw,
+        CAST(zipped['list_1'] AS TIMESTAMP) as mem_timestamp,
+        zipped['list_2'] as mem_value,
+        CAST(zipped['list_3'] AS TIMESTAMP) as cpu_timestamp,
+        zipped['list_4'] as cpu_value
+
+    from i1
+    """
+df = conn.execute(query).df()
+
+
+mem_chart = (
+    alt.Chart(df)
+    .mark_line()
+    .encode(
+        x=alt.X("mem_timestamp:T", axis=alt.Axis(format="%H:%M:%S")),  # Custom format
+        y="mem_value:Q",
+        color=alt.value("blue"),
+        tooltip=["datetime", "mem_value"],
+    )
+    .properties(title="Memory Usage Over Time", width=600, height=300)
+)
+
+
+cpu_chart = (
+    alt.Chart(df)
+    .mark_line()
+    .encode(
+        x=alt.X("cpu_timestamp:T", axis=alt.Axis(format="%H:%M:%S")),  # Custom format
+        y="cpu_value:Q",
+        color=alt.value("red"),
+        tooltip=["datetime", "cpu_value"],
+    )
+    .properties(title="CPU Usage Over Time", width=600, height=300)
+)
+
+
+stacked_chart = alt.vconcat(mem_chart, cpu_chart).resolve_scale(
+    x="shared", y="independent"
+)
+
+
+stacked_chart
