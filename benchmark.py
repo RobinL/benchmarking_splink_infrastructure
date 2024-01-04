@@ -2,7 +2,12 @@ import time
 from datetime import datetime
 
 import boto3
+from IPython.display import display
 
+from analysis_functions.charts import stacked_mem_cpu
+from analysis_functions.duckdb_helpers import load_dict_to_duckdb_using_read_json_auto
+from analysis_functions.messages import print_benchmark_info
+from analysis_functions.s3 import get_json_file_from_s3
 from benchmarking_functions.cloudwatch import (
     get_metric_data_from_ec2_run,
 )
@@ -22,7 +27,6 @@ from benchmarking_functions.iam import cleanup_iam_resources, create_all_iam_res
 from benchmarking_functions.s3 import (
     create_bucket_if_not_exists,
     find_benchmarking_file_in_s3,
-    get_json_file_from_s3,
 )
 
 s3_client = boto3.client("s3", region_name=AWS_REGION)
@@ -92,7 +96,7 @@ cleanup_iam_resources(iam_client, EC2_IAM_ROLE_NAME, EC2_IAM_INSTANCE_PROFILE_NA
 end_time = time.time()
 print(f"Total time taken: {end_time - start_time:.2f} seconds")
 
-
+# Print results
 instance_id = instance["Instances"][0]["InstanceId"]
 
 
@@ -103,17 +107,8 @@ benchmarking_file = find_benchmarking_file_in_s3(
     instance_id=instance_id,
 )
 
-import json
-
-
-def get_json_file_from_s3(s3_client, bucket_name, file_key):
-    try:
-        response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
-        json_content = response["Body"].read()
-        return json.loads(json_content)
-    except Exception as e:
-        print(f"Error occurred while fetching JSON from S3: {e}")
-        return None
-
 
 json_data = get_json_file_from_s3(s3_client, OUTPUT_S3_BUCKET, benchmarking_file)
+conn = load_dict_to_duckdb_using_read_json_auto(json_data, table_name="jd")
+display(stacked_mem_cpu(conn, "jd", instance_id))
+print_benchmark_info(json_data)

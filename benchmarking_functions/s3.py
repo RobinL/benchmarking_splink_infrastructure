@@ -1,8 +1,3 @@
-import json
-
-import boto3
-
-
 def create_bucket_if_not_exists(s3_client, bucket_name, region):
     try:
         s3_client.create_bucket(
@@ -34,13 +29,3 @@ def find_benchmarking_file_in_s3(*, s3_client, bucket_name, s3_folder, instance_
     raise FileNotFoundError(
         f"No file found for '{file_pattern}' in '{bucket_name}/{s3_folder}'"
     )
-
-
-def get_json_file_from_s3(s3_client, bucket_name, file_key):
-    try:
-        response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
-        json_content = response["Body"].read()
-        return json.loads(json_content)
-    except Exception as e:
-        print(f"Error occurred while fetching JSON from S3: {e}")
-        return None
