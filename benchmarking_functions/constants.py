@@ -1,5 +1,6 @@
 AWS_REGION = "eu-west-2"  # London
 OUTPUT_S3_BUCKET = "robinsplinkbenchmarks"
+OUTPUT_S3_FOLDER = "pytest_benchmark_results"
 EC2_IAM_ROLE_NAME = "EC2S3RobinBenchmarksRole"
 S3_IAM_POLICY_NAME = "S3AccessRobinSplinkBenchmarks"
 CLOUDWATCH_IAM_POLICY_NAME = "CloudWatchAccessRobinSplinkBenchmarks"

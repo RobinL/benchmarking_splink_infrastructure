@@ -5,7 +5,6 @@ import boto3
 
 from benchmarking_functions.cloudwatch import (
     get_metric_data_from_ec2_run,
-    save_metrics_response_to_json,
 )
 from benchmarking_functions.constants import (
     AWS_REGION,
@@ -15,11 +14,16 @@ from benchmarking_functions.constants import (
     IMAGEID,
     INSTANCE_TYPE,
     OUTPUT_S3_BUCKET,
+    OUTPUT_S3_FOLDER,
     S3_IAM_POLICY_NAME,
 )
 from benchmarking_functions.ec2 import poll_instance_id
 from benchmarking_functions.iam import cleanup_iam_resources, create_all_iam_resources
-from benchmarking_functions.s3 import create_bucket_if_not_exists
+from benchmarking_functions.s3 import (
+    create_bucket_if_not_exists,
+    find_benchmarking_file_in_s3,
+    get_json_file_from_s3,
+)
 
 s3_client = boto3.client("s3", region_name=AWS_REGION)
 iam_client = boto3.client("iam", region_name=AWS_REGION)
@@ -82,7 +86,6 @@ response = get_metric_data_from_ec2_run(
     metrics_collection_end_time=metrics_collection_end_time,
 )
 
-save_metrics_response_to_json(response, "metrics_data.json")
 
 cleanup_iam_resources(iam_client, EC2_IAM_ROLE_NAME, EC2_IAM_INSTANCE_PROFILE_NAME)
 
@@ -90,5 +93,27 @@ end_time = time.time()
 print(f"Total time taken: {end_time - start_time:.2f} seconds")
 
 
-# Probably want to grab and print the benchmarking results json here
-# for convenience
+instance_id = instance["Instances"][0]["InstanceId"]
+
+
+benchmarking_file = find_benchmarking_file_in_s3(
+    s3_client=s3_client,
+    bucket_name=OUTPUT_S3_BUCKET,
+    s3_folder=OUTPUT_S3_FOLDER,
+    instance_id=instance_id,
+)
+
+import json
+
+
+def get_json_file_from_s3(s3_client, bucket_name, file_key):
+    try:
+        response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
+        json_content = response["Body"].read()
+        return json.loads(json_content)
+    except Exception as e:
+        print(f"Error occurred while fetching JSON from S3: {e}")
+        return None
+
+
+json_data = get_json_file_from_s3(s3_client, OUTPUT_S3_BUCKET, benchmarking_file)
