@@ -71,28 +71,34 @@ conn.execute(query).df()
 json_folder = "benchmarking_json"
 
 query = f"""
-    with i1 as (
-        SELECT
-            datetime,
-            custom.run_label as run_label,
-            custom.max_pairs as max_pairs,
-            benchmarks[1].name as benchmark_name,
-            benchmarks[1].stats.min as min_time,
-            benchmarks[1].stats.mean as mean_time,
-            machine_info.cpu.count as cpu_count,
-            machine_info.cpu.brand_raw as cpu_brand_raw,
-
-            unnest(list_zip(
-                custom.metrics.MetricDataResults[1].Timestamps,
-                custom.metrics.MetricDataResults[1].Values,
-                custom.metrics.MetricDataResults[2].Timestamps,
-                custom.metrics.MetricDataResults[2].Values
-            )) as zipped,
-
-
+    with json_data as (
+        SELECT *
         FROM read_json_auto('{json_folder}/*.json')
-        where datetime = '2023-12-30T19:43:33.685711'
+    ),
+    latest_datetime as (
+        SELECT datetime
+        FROM json_data
         ORDER BY datetime DESC
+        LIMIT 1 OFFSET 0
+    ),
+    i1 as (
+        SELECT
+            jd.datetime,
+            jd.custom.run_label as run_label,
+            jd.custom.max_pairs as max_pairs,
+            jd.benchmarks[1].name as benchmark_name,
+            jd.benchmarks[1].stats.min as min_time,
+            jd.benchmarks[1].stats.mean as mean_time,
+            jd.machine_info.cpu.count as cpu_count,
+            jd.machine_info.cpu.brand_raw as cpu_brand_raw,
+            unnest(list_zip(
+                jd.custom.metrics.MetricDataResults[1].Timestamps,
+                jd.custom.metrics.MetricDataResults[1].Values,
+                jd.custom.metrics.MetricDataResults[2].Timestamps,
+                jd.custom.metrics.MetricDataResults[2].Values
+            )) as zipped
+        FROM json_data jd
+        INNER JOIN latest_datetime ld ON jd.datetime = ld.datetime
     )
     select
         datetime,
@@ -107,11 +113,11 @@ query = f"""
         zipped['list_2'] as mem_value,
         CAST(zipped['list_3'] AS TIMESTAMP) as cpu_timestamp,
         zipped['list_4'] as cpu_value
-
     from i1
+
     """
 df = conn.execute(query).df()
-
+df
 
 mem_chart = (
     alt.Chart(df)
@@ -122,7 +128,7 @@ mem_chart = (
         color=alt.value("blue"),
         tooltip=["datetime", "mem_value"],
     )
-    .properties(title="Memory Usage Over Time", width=600, height=300)
+    .properties(title="Memory Usage Over Time", width=300, height=150)
 )
 
 
@@ -135,7 +141,7 @@ cpu_chart = (
         color=alt.value("red"),
         tooltip=["datetime", "cpu_value"],
     )
-    .properties(title="CPU Usage Over Time", width=600, height=300)
+    .properties(title="CPU Usage Over Time", width=300, height=150)
 )
 
 
