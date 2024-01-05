@@ -1,4 +1,5 @@
 import json
+import os
 from datetime import datetime
 
 from benchmarking_functions.constants import (
@@ -74,3 +75,40 @@ def get_metric_data_from_ec2_run(
 def save_metrics_response_to_json(response, local_file_name):
     with open("metrics_data.json", "w") as file:
         json.dump(response, file, indent=4, default=_custom_json_serializer)
+
+
+def download_cloudwatch_log(logs_client, log_group, log_stream, out_folder):
+    if not os.path.exists(out_folder):
+        os.makedirs(out_folder)
+
+    prev_token = None
+    next_token = None
+    all_log_events = []
+
+    while True:
+        if next_token:
+            response = logs_client.get_log_events(
+                logGroupName=log_group, logStreamName=log_stream, nextToken=next_token
+            )
+        else:
+            response = logs_client.get_log_events(
+                logGroupName=log_group, logStreamName=log_stream
+            )
+
+        all_log_events.extend(response["events"])
+
+        prev_token = next_token
+        next_token = response.get("nextForwardToken")
+
+        # Check for end of stream
+        if not next_token or next_token == prev_token:
+            break
+
+    # Define the file path including the output folder
+    file_path = os.path.join(out_folder, f"{log_stream}.log")
+
+    with open(file_path, "w") as file:
+        for event in all_log_events:
+            file.write(event["message"] + "\n")
+
+    print(f"Downloaded logs to {file_path}")

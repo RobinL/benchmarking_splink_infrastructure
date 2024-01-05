@@ -18,3 +18,13 @@ def print_benchmark_info(json_data):
         print(f"{'Max Pairs:'.ljust(max_label_length)} {max_pairs}")
         print(f"{'Instance Type:'.ljust(max_label_length)} {instance_type}")
         print(f"{'Run Label:'.ljust(max_label_length)} {run_label}")
+
+
+def print_cloudwatch_link(instance):
+    instance_id = instance["Instances"][0]["InstanceId"]
+    url = (
+        "https://eu-west-2.console.aws.amazon.com/cloudwatch/home"
+        "?region=eu-west-2#logsV2:log-groups/log-group/"
+        f"SplinkBenchmarking/log-events/{instance_id}"
+    )
+    print(url)
