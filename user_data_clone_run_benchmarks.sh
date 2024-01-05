@@ -21,10 +21,20 @@ python3 -m venv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
 
-# python3 run.py --max_pairs "1.1e8" --run_label "release" --output_bucket "robinsplinkbenchmarks"
+
+# python3 run.py --max_pairs "1.1e8" \
+#     --run_label "release" \
+#     --output_bucket "robinsplinkbenchmarks" \
+#     --output_folder "pytest_benchmark_results" \
+#     --aws_region "eu-west-2"
+
 pip3 uninstall splink -y
 pip3 install -I git+https://github.com/moj-analytical-services/splink.git@faster_duckdb_for_benchmarking
 
-python3 run.py --max_pairs "1.1e8" --run_label "faster_duckdb_for_benchmarking" --output_bucket "robinsplinkbenchmarks" --output_folder "pytest_benchmark_results"
+python3 run.py --max_pairs "1.1e8" \
+    --run_label "faster_duckdb_for_benchmarking" \
+    --output_bucket "robinsplinkbenchmarks" \
+    --output_folder "pytest_benchmark_results" \
+    --aws_region "eu-west-2"
 
 deactivate
