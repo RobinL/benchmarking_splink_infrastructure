@@ -2,10 +2,7 @@ import json
 from datetime import datetime
 
 from benchmarking_functions.constants import (
-    AWS_REGION,
     INSTANCE_TYPE,
-    OUTPUT_S3_BUCKET,
-    OUTPUT_S3_FOLDER,
 )
 
 

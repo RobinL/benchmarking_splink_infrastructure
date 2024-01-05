@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-trap "shutdown now" EXIT
+# The sleep ensures that errors get logged before shutdown
+trap "sleep 10; shutdown now" EXIT
 
 yum update -y
 yum install -y amazon-cloudwatch-agent python3-pip git at
@@ -26,7 +27,7 @@ pip3 install -r requirements.txt
 #     --run_label "release" \
 #     --output_bucket "robinsplinkbenchmarks" \
 #     --output_folder "pytest_benchmark_results" \
-#     --aws_region "eu-west-2"
+#     --aws_region "eu-west-2" 2>&1
 
 pip3 uninstall splink -y
 pip3 install -I git+https://github.com/moj-analytical-services/splink.git@faster_duckdb_for_benchmarking
@@ -35,6 +36,6 @@ python3 run.py --max_pairs "1.1e8" \
     --run_label "faster_duckdb_for_benchmarking" \
     --output_bucket "robinsplinkbenchmarks" \
     --output_folder "pytest_benchmark_results" \
-    --aws_region "eu-west-2"
+    --aws_region "eu-west-2" 2>&1
 
 deactivate
