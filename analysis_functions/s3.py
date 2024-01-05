@@ -3,9 +3,9 @@ import json
 from benchmarking_functions.constants import OUTPUT_S3_BUCKET
 
 
-def get_json_file_from_s3(s3_client, bucket_name, file_key):
+def get_json_file_from_s3(s3_client, file_key):
     try:
-        response = s3_client.get_object(Bucket=bucket_name, Key=file_key)
+        response = s3_client.get_object(Bucket=OUTPUT_S3_BUCKET, Key=file_key)
         json_content = response["Body"].read()
         return json.loads(json_content)
     except Exception as e:
