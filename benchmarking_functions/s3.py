@@ -1,13 +1,21 @@
-def create_bucket_if_not_exists(s3_client, bucket_name, region):
+from benchmarking_functions.constants import (
+    AWS_REGION,
+    OUTPUT_S3_BUCKET,
+)
+
+
+def create_bucket_if_not_exists(s3_client):
     try:
         s3_client.create_bucket(
-            Bucket=bucket_name,
-            CreateBucketConfiguration={"LocationConstraint": region},
+            Bucket=OUTPUT_S3_BUCKET,
+            CreateBucketConfiguration={"LocationConstraint": AWS_REGION},
         )
     except s3_client.exceptions.BucketAlreadyOwnedByYou:
-        print(f"Bucket '{bucket_name}' already exists in your account.")
+        print(f"Bucket '{OUTPUT_S3_BUCKET}' already exists in your account.")
     except s3_client.exceptions.BucketAlreadyExists:
-        raise Exception(f"Bucket '{bucket_name}' already exists in another account.")
+        raise Exception(
+            f"Bucket '{OUTPUT_S3_BUCKET}' already exists in another account."
+        )
 
 
 def find_benchmarking_file_in_s3(*, s3_client, bucket_name, s3_folder, instance_id):

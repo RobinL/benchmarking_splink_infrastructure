@@ -13,14 +13,11 @@ from benchmarking_functions.cloudwatch import (
 )
 from benchmarking_functions.constants import (
     AWS_REGION,
-    CLOUDWATCH_IAM_POLICY_NAME,
     EC2_IAM_INSTANCE_PROFILE_NAME,
-    EC2_IAM_ROLE_NAME,
     IMAGEID,
     INSTANCE_TYPE,
     OUTPUT_S3_BUCKET,
     OUTPUT_S3_FOLDER,
-    S3_IAM_POLICY_NAME,
 )
 from benchmarking_functions.ec2 import poll_instance_id
 from benchmarking_functions.iam import cleanup_iam_resources, create_all_iam_resources
@@ -36,19 +33,11 @@ cw_client = boto3.client("cloudwatch", region_name=AWS_REGION)
 
 start_time = time.time()
 
-create_bucket_if_not_exists(s3_client, OUTPUT_S3_BUCKET, AWS_REGION)
+create_bucket_if_not_exists(s3_client)
 
-cleanup_iam_resources(iam_client, EC2_IAM_ROLE_NAME, EC2_IAM_INSTANCE_PROFILE_NAME)
+cleanup_iam_resources(iam_client)
 
-
-create_all_iam_resources(
-    iam_client,
-    EC2_IAM_ROLE_NAME,
-    S3_IAM_POLICY_NAME,
-    CLOUDWATCH_IAM_POLICY_NAME,
-    EC2_IAM_INSTANCE_PROFILE_NAME,
-    OUTPUT_S3_BUCKET,
-)
+create_all_iam_resources(iam_client)
 
 # Allow time for propogation delays
 time.sleep(10)
@@ -91,7 +80,7 @@ response = get_metric_data_from_ec2_run(
 )
 
 
-cleanup_iam_resources(iam_client, EC2_IAM_ROLE_NAME, EC2_IAM_INSTANCE_PROFILE_NAME)
+cleanup_iam_resources(iam_client)
 
 end_time = time.time()
 print(f"Total time taken: {end_time - start_time:.2f} seconds")
