@@ -13,13 +13,8 @@ from benchmarking_functions.cloudwatch import (
 )
 from benchmarking_functions.constants import (
     AWS_REGION,
-    EC2_IAM_INSTANCE_PROFILE_NAME,
-    IMAGEID,
-    INSTANCE_TYPE,
-    OUTPUT_S3_BUCKET,
-    OUTPUT_S3_FOLDER,
 )
-from benchmarking_functions.ec2 import poll_instance_id
+from benchmarking_functions.ec2 import poll_instance_id, run_instance_with_user_data
 from benchmarking_functions.iam import cleanup_iam_resources, create_all_iam_resources
 from benchmarking_functions.s3 import (
     create_bucket_if_not_exists,
@@ -43,30 +38,12 @@ create_all_iam_resources(iam_client)
 time.sleep(10)
 
 
-def read_user_data_script(file_path):
-    with open(file_path, "r") as file:
-        return file.read()
-
-
-user_data_file_path = "user_data_clone_run_benchmarks.sh"
-user_data_script = read_user_data_script(user_data_file_path)
-
-
 metrics_collection_start_time = datetime.utcnow()
 
 
-instance = ec2_client.run_instances(
-    ImageId=IMAGEID,
-    InstanceType=INSTANCE_TYPE,
-    MinCount=1,
-    MaxCount=1,
-    UserData=user_data_script,
-    IamInstanceProfile={"Name": EC2_IAM_INSTANCE_PROFILE_NAME},
-    InstanceInitiatedShutdownBehavior="terminate",
-)
+instance = run_instance_with_user_data(ec2_client, "user_data_clone_run_benchmarks.sh")
 
 poll_instance_id(ec2_client, instance)
-
 
 metrics_collection_end_time = datetime.utcnow()
 
@@ -74,7 +51,6 @@ metrics_collection_end_time = datetime.utcnow()
 response = get_metric_data_from_ec2_run(
     cw_client=cw_client,
     instance=instance,
-    instance_type=INSTANCE_TYPE,
     metrics_collection_start_time=metrics_collection_start_time,
     metrics_collection_end_time=metrics_collection_end_time,
 )
@@ -91,13 +67,11 @@ instance_id = instance["Instances"][0]["InstanceId"]
 
 benchmarking_file = find_benchmarking_file_in_s3(
     s3_client=s3_client,
-    bucket_name=OUTPUT_S3_BUCKET,
-    s3_folder=OUTPUT_S3_FOLDER,
     instance_id=instance_id,
 )
 
 
-json_data = get_json_file_from_s3(s3_client, OUTPUT_S3_BUCKET, benchmarking_file)
+json_data = get_json_file_from_s3(s3_client, benchmarking_file)
 conn = load_dict_to_duckdb_using_read_json_auto(json_data, table_name="jd")
 display(stacked_mem_cpu(conn, "jd", instance_id))
 print_benchmark_info(json_data)

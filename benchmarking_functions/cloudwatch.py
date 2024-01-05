@@ -1,6 +1,13 @@
 import json
 from datetime import datetime
 
+from benchmarking_functions.constants import (
+    AWS_REGION,
+    INSTANCE_TYPE,
+    OUTPUT_S3_BUCKET,
+    OUTPUT_S3_FOLDER,
+)
+
 
 def _create_metric_queries(instance_id, instance_type):
     dimensions = [
@@ -53,13 +60,12 @@ def get_metric_data_from_ec2_run(
     *,
     cw_client,
     instance,
-    instance_type,
     metrics_collection_start_time,
     metrics_collection_end_time,
 ):
     instance_id = instance["Instances"][0]["InstanceId"]
 
-    metric_queries = _create_metric_queries(instance_id, instance_type)
+    metric_queries = _create_metric_queries(instance_id, INSTANCE_TYPE)
     response = cw_client.get_metric_data(
         MetricDataQueries=metric_queries,
         StartTime=metrics_collection_start_time,

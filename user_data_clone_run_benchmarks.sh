@@ -25,6 +25,6 @@ pip3 install -r requirements.txt
 pip3 uninstall splink -y
 pip3 install -I git+https://github.com/moj-analytical-services/splink.git@faster_duckdb_for_benchmarking
 
-python3 run.py --max_pairs "1.1e7" --run_label "faster_duckdb_for_benchmarking" --output_bucket "robinsplinkbenchmarks" --output_folder "pytest_benchmark_results"
+python3 run.py --max_pairs "1.1e8" --run_label "faster_duckdb_for_benchmarking" --output_bucket "robinsplinkbenchmarks" --output_folder "pytest_benchmark_results"
 
 deactivate
