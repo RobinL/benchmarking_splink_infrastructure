@@ -10,12 +10,14 @@ def print_benchmark_info(json_data):
         stats = benchmark.get("stats", {})
         mean = stats.get("mean", "N/A")
         max_pairs = custom_info.get("max_pairs", "N/A")
+        num_input_rows = custom_info.get("num_input_rows", "N/A")
         instance_type = custom_info.get("instance_type", "N/A")
         run_label = custom_info.get("run_label", "N/A")
 
         print(f"{'Benchmark:'.ljust(max_label_length)} {name}")
         print(f"{'Mean:'.ljust(max_label_length)} {mean:.2f} seconds")
         print(f"{'Max Pairs:'.ljust(max_label_length)} {max_pairs}")
+        print(f"{'Num Input Rows:'.ljust(max_label_length)} {num_input_rows}")
         print(f"{'Instance Type:'.ljust(max_label_length)} {instance_type}")
         print(f"{'Run Label:'.ljust(max_label_length)} {run_label}")
 

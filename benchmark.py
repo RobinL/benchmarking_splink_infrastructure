@@ -46,6 +46,7 @@ metrics_collection_start_time = datetime.utcnow()
 instance = run_instance_with_user_data(ec2_client, "user_data_clone_run_benchmarks.sh")
 
 print_cloudwatch_link(instance)
+time.sleep(5)
 poll_instance_id(ec2_client, instance)
 
 metrics_collection_end_time = datetime.utcnow()
@@ -66,11 +67,12 @@ print(f"Total time taken: {end_time - start_time:.2f} seconds")
 
 # Print results
 instance_id = instance["Instances"][0]["InstanceId"]
-
+download_cloudwatch_log(logs_client, "SplinkBenchmarking", instance_id, "logs_folder")
 
 benchmarking_file = find_benchmarking_file_in_s3(
     s3_client=s3_client,
     instance_id=instance_id,
+    run_label="faster_duckdb_with_em_salting",
 )
 
 
@@ -78,6 +80,3 @@ json_data = get_json_file_from_s3(s3_client, benchmarking_file)
 conn = load_dict_to_duckdb_using_read_json_auto(json_data, table_name="jd")
 display(stacked_mem_cpu(conn, "jd", instance_id))
 print_benchmark_info(json_data)
-
-
-download_cloudwatch_log(logs_client, "SplinkBenchmarking", instance_id, "logs_folder")

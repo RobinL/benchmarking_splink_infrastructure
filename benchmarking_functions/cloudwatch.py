@@ -111,4 +111,6 @@ def download_cloudwatch_log(logs_client, log_group, log_stream, out_folder):
         for event in all_log_events:
             file.write(event["message"] + "\n")
 
-    print(f"Downloaded logs to {file_path}")
+    ap = os.path.abspath(file_path)
+
+    print(f"Downloaded logs to file://{ap}")

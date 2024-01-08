@@ -19,10 +19,10 @@ def create_bucket_if_not_exists(s3_client):
         )
 
 
-def find_benchmarking_file_in_s3(*, s3_client, instance_id):
-    file_pattern = f"benchmarking_results_{instance_id}.json"
+def find_benchmarking_file_in_s3(*, s3_client, instance_id, run_label):
+    file_pattern = f"benchmarking_results_{instance_id}_{run_label}.json"
 
-    prefix = f"{OUTPUT_S3_FOLDER}/{file_pattern}" if OUTPUT_S3_FOLDER else file_pattern
+    prefix = f"{OUTPUT_S3_FOLDER}/{file_pattern}"
 
     paginator = s3_client.get_paginator("list_objects_v2")
     for page in paginator.paginate(Bucket=OUTPUT_S3_BUCKET, Prefix=prefix):
