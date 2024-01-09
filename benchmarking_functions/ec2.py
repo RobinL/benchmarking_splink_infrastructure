@@ -1,9 +1,16 @@
 import time
 
 from benchmarking_functions.constants import (
+    AWS_REGION,
     EC2_IAM_INSTANCE_PROFILE_NAME,
     IMAGEID,
     INSTANCE_TYPE,
+    MAX_PAIRS,
+    NUM_INPUT_ROWS,
+    OUTPUT_S3_BUCKET,
+    OUTPUT_S3_FOLDER,
+    SPLINK_VARIANT_TAG_1,
+    SPLINK_VARIANT_TAG_2,
 )
 
 
@@ -35,7 +42,20 @@ def poll_instance_id(ec2_client, instance):
 
 
 def run_instance_with_user_data(ec2_client, user_data_file_path):
-    user_data_script = read_user_data_script(user_data_file_path)
+    user_data_script_template = read_user_data_script(user_data_file_path)
+
+    interpolation_dict = {
+        "max_pairs": MAX_PAIRS,
+        "num_input_rows": NUM_INPUT_ROWS,
+        "output_bucket": OUTPUT_S3_BUCKET,
+        "output_folder": OUTPUT_S3_FOLDER,
+        "aws_region": AWS_REGION,
+        "tag_1": SPLINK_VARIANT_TAG_1,
+        "tag_2": SPLINK_VARIANT_TAG_2,
+    }
+
+    user_data_script = user_data_script_template.format(**interpolation_dict)
+    print(user_data_script)
 
     instance = ec2_client.run_instances(
         ImageId=IMAGEID,

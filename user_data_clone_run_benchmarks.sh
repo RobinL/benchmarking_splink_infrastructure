@@ -22,27 +22,43 @@ python3 -m venv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
 
-pip3 uninstall duckdb -y
-pip3 install duckdb==0.9.3.dev2187
+pip3 uninstall splink -y
+pip3 install splink==3.9.10
 
 python3 run.py \
-    --max_pairs "1.1e8" \
-    --num_input_rows "1e6" \
-    --run_label "release" \
-    --output_bucket "robinsplinkbenchmarks" \
-    --output_folder "pytest_benchmark_results" \
-    --aws_region "eu-west-2" 2>&1
+    --max_pairs "{max_pairs}" \
+    --num_input_rows "{num_input_rows}" \
+    --run_label "3.9.10" \
+    --output_bucket "{output_bucket}" \
+    --output_folder "{output_folder}" \
+    --aws_region "{aws_region}" 2>&1
 
 pip3 uninstall splink -y
 
-pip3 install -I git+https://github.com/moj-analytical-services/splink.git@faster_duckdb_with_em_salting
+
+pip3 install -I git+https://github.com/robinl/splink.git@{tag_1}
 
 python3 run.py \
-    --max_pairs "1.1e8" \
-    --num_input_rows "1e6" \
-    --run_label "faster_duckdb_with_em_salting" \
-    --output_bucket "robinsplinkbenchmarks" \
-    --output_folder "pytest_benchmark_results" \
-    --aws_region "eu-west-2" 2>&1
+    --max_pairs "{max_pairs}" \
+    --num_input_rows "{num_input_rows}" \
+    --run_label "{tag_1}" \
+    --output_bucket "{output_bucket}" \
+    --output_folder "{output_folder}" \
+    --aws_region "{aws_region}" 2>&1
+
+
+pip3 uninstall splink -y
+
+
+pip3 install -I git+https://github.com/robinl/splink.git@{tag_2}
+
+python3 run.py \
+    --max_pairs "{max_pairs}" \
+    --num_input_rows "{num_input_rows}" \
+    --run_label "{tag_2}" \
+    --output_bucket "{output_bucket}" \
+    --output_folder "{output_folder}" \
+    --aws_region "{aws_region}" 2>&1
+
 
 deactivate

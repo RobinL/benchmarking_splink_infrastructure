@@ -14,6 +14,8 @@ from benchmarking_functions.cloudwatch import (
 )
 from benchmarking_functions.constants import (
     AWS_REGION,
+    SPLINK_VARIANT_TAG_1,
+    SPLINK_VARIANT_TAG_2,
 )
 from benchmarking_functions.ec2 import poll_instance_id, run_instance_with_user_data
 from benchmarking_functions.iam import cleanup_iam_resources, create_all_iam_resources
@@ -72,7 +74,32 @@ download_cloudwatch_log(logs_client, "SplinkBenchmarking", instance_id, "logs_fo
 benchmarking_file = find_benchmarking_file_in_s3(
     s3_client=s3_client,
     instance_id=instance_id,
-    run_label="faster_duckdb_with_em_salting",
+    run_label="3.9.10",
+)
+
+
+json_data = get_json_file_from_s3(s3_client, benchmarking_file)
+conn = load_dict_to_duckdb_using_read_json_auto(json_data, table_name="jd")
+display(stacked_mem_cpu(conn, "jd", instance_id))
+print_benchmark_info(json_data)
+
+
+benchmarking_file = find_benchmarking_file_in_s3(
+    s3_client=s3_client,
+    instance_id=instance_id,
+    run_label=SPLINK_VARIANT_TAG_1,
+)
+
+
+json_data = get_json_file_from_s3(s3_client, benchmarking_file)
+conn = load_dict_to_duckdb_using_read_json_auto(json_data, table_name="jd")
+display(stacked_mem_cpu(conn, "jd", instance_id))
+print_benchmark_info(json_data)
+
+benchmarking_file = find_benchmarking_file_in_s3(
+    s3_client=s3_client,
+    instance_id=instance_id,
+    run_label=SPLINK_VARIANT_TAG_2,
 )
 
 
