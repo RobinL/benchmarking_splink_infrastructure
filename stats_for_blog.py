@@ -122,7 +122,7 @@ with unnested as (
       from formatted left join instance_types on formatted.instance_type = instance_types.api_name
     """
 results_for_chart = conn.execute(query).df()
-
+results_for_chart
 
 # new field that is the string concat of instance_type, vcpus and instance_memory
 results_for_chart["instance_desc"] = (
@@ -206,20 +206,24 @@ query = f"""
 
     )
     select
-        instance_id,
-        datetime,
-        run_label,
-        max_pairs,
-        benchmark_name,
-        min_time,
-        mean_time,
-        cpu_count,
-        cpu_brand_raw,
-        CAST(zipped['list_1'] AS TIMESTAMP) as mem_timestamp,
-        zipped['list_2'] as mem_value,
-        CAST(zipped['list_3'] AS TIMESTAMP) as cpu_timestamp,
-        zipped['list_4'] as cpu_value
+        i1.instance_id,
+        i1.datetime,
+        i1.run_label,
+        i1.max_pairs,
+        i1.benchmark_name,
+        i1.min_time,
+        i1.mean_time,
+        i1.cpu_count,
+        i1.cpu_brand_raw,
+        CAST(i1.zipped['list_1'] AS TIMESTAMP) as mem_timestamp,
+        i1.zipped['list_2'] as mem_value,
+        CAST(i1.zipped['list_3'] AS TIMESTAMP) as cpu_timestamp,
+        i1.zipped['list_4'] as cpu_value,
+        results_for_chart.instance_desc
     from i1
+    left join
+    results_for_chart
+    on i1.instance_id = results_for_chart.instance_id
 
     """
 mem_cpu_data = conn.execute(query).df()
@@ -227,57 +231,64 @@ mem_cpu_data = conn.execute(query).df()
 
 import altair as alt
 
-click = alt.selection_point(encodings=["color"])
+click = alt.selection_point(
+    encodings=["y"], value="c6g.xlarge (4 vCPUs 8.0 GiB)", empty=False
+)
 
-
-# Top panel is a time series plot of memory and CPU usage
 time_series_1 = (
     alt.Chart(mem_cpu_data)
     .mark_line()
     .encode(
-        x="mem_timestamp:T",
-        y=alt.Y("mem_value:Q", title="Memory Usage"),
-        color="instance_id:N",
+        x=alt.X("mem_timestamp:T", title=None),
+        y=alt.Y(
+            "mem_value:Q", title="Memory Usage %", scale=alt.Scale(domain=[0, 100])
+        ),
         tooltip=["mem_timestamp:T", "mem_value:Q", "mem_value:Q"],
     )
-    .properties(width=550, height=300)
+    .properties(width=550, height=150)
     .transform_filter(click)
 )
-mem_cpu_data
 
-results_for_chart
-# Bottom panel is a bar chart of instance IDs and total runtime
-# Updated Bottom panel as a bar chart of instance IDs and total runtime
+time_series_2 = (
+    alt.Chart(mem_cpu_data)
+    .mark_line()
+    .encode(
+        x=alt.X("cpu_timestamp:T", title=None),
+        y=alt.Y("cpu_value:Q", title="CPU Usage %", scale=alt.Scale(domain=[0, 100])),
+        tooltip=["cpu_timestamp:T", "cpu_value:Q", "cpu_value:Q"],
+    )
+    .properties(width=550, height=150)
+    .transform_filter(click)
+)
 
 bars = (
     alt.Chart(results_for_chart)
     .mark_bar()
     .encode(
         y=alt.Y(
-            "instance_id:N",
+            "instance_desc:N",
             sort=alt.EncodingSortField(field="num_cpus", order="descending"),
             axis=alt.Axis(title="Instance id"),
-        ),  # More descriptive y-axis title
-        x=alt.X(
-            "mean_seconds:Q", axis=alt.Axis(title="Runtime (Seconds)")
-        ),  # More descriptive x-axis title
-        color=alt.condition(click, "instance_id:N", alt.value("lightgray")),
+        ),
+        x=alt.X("mean_seconds:Q", axis=alt.Axis(title="Runtime (Seconds)")),
+        color=alt.condition(click, alt.value("steelblue"), alt.value("lightgray")),
         tooltip=tooltip,
     )
     .properties(
         title={
-            "text": ["Runtime to Find Matching Records"],
-            "subtitle": ["Hover over bars for details "],
+            "text": ["CPU and Memory Usage for each run"],
+            "subtitle": ["Click on bar to view corresponding memory and CPU usage"],
             "color": "black",
             "subtitleColor": "gray",
         },
+        width=550,
     )
-    .add_params(click)
-)
+).add_params(click)
+
 bars
 
 
 # Combine the plots
-chart = alt.vconcat(bars, time_series_1, title="Instance Usage and Runtime")
+chart = alt.vconcat(bars, time_series_1, time_series_2)
 
 chart
