@@ -13,11 +13,9 @@ from benchmarking_functions.constants import (
 )
 
 bar_chart_tooltip = [
-    alt.Tooltip("mean_seconds:Q", title="Mean Runtime", format=".2f"),
+    alt.Tooltip("mean_seconds:Q", title="Runtime (seconds)", format=".2f"),
     alt.Tooltip("max_pairs:Q", title="Max Pairs for estiamte u", format=","),
     alt.Tooltip("num_input_rows:Q", title="Number of Input Rows", format=","),
-    alt.Tooltip("num_cpus:Q", title="Count", format=","),
-    alt.Tooltip("instance_id:N", title="Instance ID"),
     alt.Tooltip("instance_type:N", title="Instance Type"),
     alt.Tooltip("vcpus:N", title="vCPUs"),
     alt.Tooltip("physical_processor:N", title="Physical Processor"),
@@ -80,25 +78,14 @@ def get_runtime_bar_chart_data(conn):
             ELSE 4
         END as benchmark_function,
 
-        CASE
-        WHEN benchmark_name LIKE '%no_salt%' THEN 0
-            WHEN benchmark_name LIKE '%salt_2%' THEN 1
-            WHEN benchmark_name LIKE '%cpu_salted%' THEN 2
-            ELSE 3
-        END as benchmark_group2,
 
-        CASE
-        WHEN benchmark_name LIKE '%no_salt%' THEN 'no_salt'
-        WHEN benchmark_name LIKE '%salt_2%' THEN 'salt_2'
-        WHEN benchmark_name LIKE '%cpu_salted%' THEN 'cpu_salted'
-        END as salt_type
 
         from unnested),
 
         formatted as (
         select mean_seconds,
         benchmark_function,
-        salt_type,
+        benchmark_group1,
         run_label,
         max_pairs,
         num_input_rows,
@@ -107,8 +94,8 @@ def get_runtime_bar_chart_data(conn):
         instance_type,
         brand_raw
         from grouped
-        where benchmark_function = 'predict' and salt_type = 'no_salt' and run_label = 'order_by_after_score'
-        ORDER BY benchmark_group1, num_cpus,benchmark_group2, run_label
+
+
         )
 
         select
@@ -120,6 +107,7 @@ def get_runtime_bar_chart_data(conn):
             instance_types.on_demand as on_demand_price,
 
         from formatted left join instance_types on formatted.instance_type = instance_types.api_name
+        ORDER BY benchmark_group1 asc, num_cpus, run_label
         """
     results_for_chart = conn.execute(query).df()
     results_for_chart["instance_desc"] = (

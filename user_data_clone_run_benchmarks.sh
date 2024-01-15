@@ -35,8 +35,7 @@ pip3 install -r requirements.txt
 
 pip3 uninstall splink -y
 
-
-pip3 install -I git+https://github.com/robinl/splink.git@{tag_1}
+pip3 install -I git+https://github.com/moj-analytical-services/splink.git@{tag_1}
 
 python3 run.py \
     --max_pairs "{max_pairs}" \
@@ -46,19 +45,6 @@ python3 run.py \
     --output_folder "{output_folder}" \
     --aws_region "{aws_region}" 2>&1
 
-
-# pip3 uninstall splink -y
-
-
-# pip3 install -I git+https://github.com/robinl/splink.git@{tag_2}
-
-# python3 run.py \
-#     --max_pairs "{max_pairs}" \
-#     --num_input_rows "{num_input_rows}" \
-#     --run_label "{tag_2}" \
-#     --output_bucket "{output_bucket}" \
-#     --output_folder "{output_folder}" \
-#     --aws_region "{aws_region}" 2>&1
 
 
 deactivate

@@ -10,15 +10,18 @@ IMAGEID = "ami-05cae8d4948d6f5b7"  # arm64
 
 # INSTANCE_TYPE = "c6g.xlarge"  # arm64 4cpu 16gb $0.16/hr
 
+INSTANCE_TYPE = "c6g.xlarge"  # arm64 8cpu 16gb $0.32/hr
+# INSTANCE_TYPE = "c6g.4xlarge"  # arm64 16cpu 32gb $0.64/hr
+
 # INSTANCE_TYPE = "c6g.16xlarge"
 # INSTANCE_TYPE = "c6g.8xlarge"
 # INSTANCE_TYPE = "c6g.16xlarge"  # arm64 64cpu 128gb $2.58/hr
 
-INSTANCE_TYPE = "c6i.32xlarge"  # x86_64
-IMAGEID = "ami-0cfd0973db26b893b"  # x86_64
+# INSTANCE_TYPE = "c6i.32xlarge"  # x86_64 128cpu 256gb $6.46/hr
+# IMAGEID = "ami-0cfd0973db26b893b"  # x86_64
 
 
-MAX_PAIRS = "1e8"
-NUM_INPUT_ROWS = "3e6"
-SPLINK_VARIANT_TAG_1 = "order_by_after_score"
+MAX_PAIRS = "1e7"
+NUM_INPUT_ROWS = "3e5"
+SPLINK_VARIANT_TAG_1 = "f128871"
 SPLINK_VARIANT_TAG_2 = "parallel_est_u_no_order_by"
