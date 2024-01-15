@@ -72,17 +72,17 @@ print(f"Total time taken: {end_time - start_time:.2f} seconds")
 instance_id = instance["Instances"][0]["InstanceId"]
 download_cloudwatch_log(logs_client, "SplinkBenchmarking", instance_id, "logs_folder")
 
-benchmarking_file = find_benchmarking_file_in_s3(
-    s3_client=s3_client,
-    instance_id=instance_id,
-    run_label="3.9.10",
-)
+# benchmarking_file = find_benchmarking_file_in_s3(
+#     s3_client=s3_client,
+#     instance_id=instance_id,
+#     run_label="3.9.10",
+# )
 
 
-json_data = get_json_file_from_s3(s3_client, benchmarking_file)
-conn = load_dict_to_duckdb_using_read_json_auto(json_data, table_name="jd")
-display(stacked_mem_cpu(conn, "jd", instance_id))
-print_benchmark_info(json_data)
+# json_data = get_json_file_from_s3(s3_client, benchmarking_file)
+# conn = load_dict_to_duckdb_using_read_json_auto(json_data, table_name="jd")
+# display(stacked_mem_cpu(conn, "jd", instance_id))
+# print_benchmark_info(json_data)
 
 
 benchmarking_file = find_benchmarking_file_in_s3(

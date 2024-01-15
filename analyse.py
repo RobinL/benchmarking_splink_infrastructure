@@ -9,10 +9,22 @@ from benchmarking_functions.constants import (
 )
 
 s3_client = boto3.client("s3", region_name=AWS_REGION)
-dict_of_jsons = get_json_files_from_s3_prefix(
-    s3_client, OUTPUT_S3_FOLDER + "/benchmarking_results_i-0755c585e55fa33d2"
-)
-conn = load_dicts_to_duckdb_using_read_json_auto(dict_of_jsons, "df")
+
+instances = [
+    "i-0a544c96bb373cfa0",
+    "i-0ae0b81108ec3c84d",
+    "i-03cc8a3e708bea937",
+    "i-056ebcd9cb91bc6ce",
+    "i-08cc3110acd7b818b",
+]
+
+final_dict = {}
+for i in instances:
+    dict_of_jsons = get_json_files_from_s3_prefix(
+        s3_client, OUTPUT_S3_FOLDER + f"/benchmarking_results_{i}"
+    )
+    final_dict = {**final_dict, **dict_of_jsons}
+conn = load_dicts_to_duckdb_using_read_json_auto(final_dict, "df")
 
 conn.execute("select * from df").df().iloc[0]["custom"]
 
@@ -81,6 +93,8 @@ with unnested as (
     instance_type,
     brand_raw
     from grouped
-    ORDER BY benchmark_group1, benchmark_group2, run_label
+    where benchmark_function = 'predict'
+    ORDER BY benchmark_group1, count,benchmark_group2, run_label
     """
 conn.execute(query).df()
+conn.execute(query).df().sort_values("mean_seconds")
