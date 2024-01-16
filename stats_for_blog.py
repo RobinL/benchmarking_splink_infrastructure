@@ -32,6 +32,13 @@ instances = [
 ]
 
 
+by_function_chart = get_by_function_bar_chart(instances)
+display(by_function_chart)
+by_function_chart.save(
+    "/Users/robinlinacre/Documents/personal/robinl.github.io/src/mdx_dev/fast_deduplication/by_function_chart.vl.json"
+)
+
+
 mem_cpu_chart = get_mem_cpu_charts(instances)
 display(mem_cpu_chart)
 mem_cpu_chart.save(
@@ -42,11 +49,4 @@ runtime_bar = get_runtime_bar_chart(instances)
 display(runtime_bar)
 runtime_bar.save(
     "/Users/robinlinacre/Documents/personal/robinl.github.io/src/mdx_dev/fast_deduplication/summary_chart.vl.json"
-)
-
-
-by_function_chart = get_by_function_bar_chart(instances)
-display(by_function_chart)
-by_function_chart.save(
-    "/Users/robinlinacre/Documents/personal/robinl.github.io/src/mdx_dev/fast_deduplication/by_function_chart.vl.json"
 )

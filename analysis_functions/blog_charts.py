@@ -35,6 +35,7 @@ benchmark_function_short_lookup = {
 
 CHART_WIDTH = 420
 
+
 def load_instance_data(instances: List[str]):
     s3_client = boto3.client("s3", region_name=AWS_REGION)
 
@@ -130,6 +131,7 @@ def get_runtime_bar_chart_data(conn):
         + results_for_chart["instance_memory"].astype(str)
         + ")"
     )
+
     return results_for_chart
 
 
@@ -138,7 +140,7 @@ def get_runtime_bar_chart(instances: list):
     results_for_chart = get_runtime_bar_chart_data(conn)
 
     results_for_chart = results_for_chart.query("benchmark_function == 'predict'")
-
+    results_for_chart["mean_minutes"] = results_for_chart["mean_seconds"] / 60
     chart = (
         alt.Chart(results_for_chart)
         .mark_bar()
@@ -149,13 +151,15 @@ def get_runtime_bar_chart(instances: list):
                 axis=alt.Axis(title="EC2 Instance"),
             ),  # More descriptive y-axis title
             x=alt.X(
-                "mean_seconds:Q", axis=alt.Axis(title=None)
+                "mean_minutes:Q", axis=alt.Axis(title="Runtime (minutes)")
             ),  # More descriptive x-axis title
             tooltip=bar_chart_tooltip,
         )
         .properties(
             title={
-                "text": ["Runtime for Splink inference (predict step)"],
+                "text": [
+                    "Runtime for Splink inference (predict step) vs. machine spec"
+                ],
                 "subtitle": ["Hover over bars for details "],
                 "color": "black",
                 "subtitleColor": "gray",
@@ -172,6 +176,8 @@ def get_mem_cpu_charts(instances: list):
     results_for_chart["benchmark_fn_short"] = results_for_chart[
         "benchmark_function"
     ].map(benchmark_function_short_lookup)
+
+    results_for_chart["mean_minutes"] = results_for_chart["mean_seconds"] / 60
 
     query = """
         with i1 as (
@@ -195,15 +201,7 @@ def get_mem_cpu_charts(instances: list):
 
         )
         select
-            i1.instance_id,
-            i1.datetime,
-            i1.run_label,
-            i1.max_pairs,
-            i1.benchmark_name,
-            i1.min_time,
-            i1.mean_time,
-            i1.cpu_count,
-            i1.cpu_brand_raw,
+
             CAST(i1.zipped['list_1'] AS TIMESTAMP) as mem_timestamp,
             i1.zipped['list_2'] as mem_value,
             CAST(i1.zipped['list_3'] AS TIMESTAMP) as cpu_timestamp,
@@ -212,13 +210,14 @@ def get_mem_cpu_charts(instances: list):
         from i1
         left join
         results_for_chart
-        on i1.instance_id = results_for_chart.instance_id
+        on i1.instance_id = results_for_chart.instance_id and
+          benchmark_function='predict'
 
 
         """
     mem_cpu_data = conn.execute(query).df()
 
-    click = alt.selection_point(encodings=["y"], value="c6g.2xlarge", empty=False)
+    click = alt.selection_point(encodings=["y"], value="c6i.32xlarge", empty=False)
 
     time_series_1 = (
         alt.Chart(mem_cpu_data)
@@ -257,7 +256,12 @@ def get_mem_cpu_charts(instances: list):
                 sort=alt.EncodingSortField(field="num_cpus", order="descending"),
                 axis=alt.Axis(title="Instance id"),
             ),
-            x=alt.X("mean_seconds:Q", axis=alt.Axis(title="Runtime (Seconds)")),
+            x=alt.X(
+                "mean_minutes:Q",
+                axis=alt.Axis(
+                    title="Total runtime of training, inference and clustering (minutes)"
+                ),
+            ),
             color=alt.condition(
                 click,
                 alt.Color(
