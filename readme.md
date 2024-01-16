@@ -1,4 +1,4 @@
-## Benchmarking infrastructure
+## Benchmarking splink infrastructure
 
 This repo creates and tears down the infrastructure needed for testing Splink
 
