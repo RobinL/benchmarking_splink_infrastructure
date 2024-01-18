@@ -22,29 +22,14 @@ python3 -m venv venv
 source venv/bin/activate
 pip3 install -r requirements.txt
 
-# pip3 uninstall splink -y
-# pip3 install splink==3.9.10
-
-# python3 run.py \
-#     --max_pairs "{max_pairs}" \
-#     --num_input_rows "{num_input_rows}" \
-#     --run_label "3.9.10" \
-#     --output_bucket "{output_bucket}" \
-#     --output_folder "{output_folder}" \
-#     --aws_region "{aws_region}" 2>&1
-
-pip3 uninstall splink -y
-
-pip3 install -I git+https://github.com/moj-analytical-services/splink.git@{tag_1}
 
 python3 run.py \
     --max_pairs "{max_pairs}" \
     --num_input_rows "{num_input_rows}" \
-    --run_label "{tag_1}" \
+    --run_label "3.9.11" \
     --output_bucket "{output_bucket}" \
     --output_folder "{output_folder}" \
     --aws_region "{aws_region}" 2>&1
-
 
 
 deactivate
