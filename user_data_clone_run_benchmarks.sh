@@ -7,14 +7,23 @@ trap "sleep 10; shutdown now" EXIT
 yum update -y
 yum install -y amazon-cloudwatch-agent python3-pip git at
 
+
 systemctl start atd
 echo "shutdown -h now" | at now + 2 hours
+
 
 
 cd /home/ec2-user
 git clone https://github.com/RobinL/run_splink_benchmarks_in_ec2.git
 
 /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -c file:/home/ec2-user/run_splink_benchmarks_in_ec2/metrics_config.json -s
+
+
+yum install -y java-1.8.0-amazon-corretto
+
+JAVA_HOME=$(dirname $(dirname $(readlink -f $(which java))))
+export JAVA_HOME
+echo "export JAVA_HOME=$JAVA_HOME" >> /home/ec2-user/.bashrc
 
 
 cd run_splink_benchmarks_in_ec2
