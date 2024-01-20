@@ -7,8 +7,14 @@ from analysis_functions.blog_charts import (
     get_runtime_bar_chart,
     get_runtime_bar_chart_data,
     load_instance_data,
+    spark_vs_duckdb_chart,
 )
 
+spark_vs_duckdb = spark_vs_duckdb_chart()
+display(spark_vs_duckdb)
+spark_vs_duckdb.save(
+    "/Users/robinlinacre/Documents/personal/robinl.github.io/src/mdx_dev/fast_deduplication/spark_vs_duckdb_chart.vl.json"
+)
 # instances = [
 #     "i-0a544c96bb373cfa0",
 #     "i-0ae0b81108ec3c84d",
@@ -49,4 +55,10 @@ runtime_bar = get_runtime_bar_chart(instances)
 display(runtime_bar)
 runtime_bar.save(
     "/Users/robinlinacre/Documents/personal/robinl.github.io/src/mdx_dev/fast_deduplication/summary_chart.vl.json"
+)
+
+spark_vs_duckdb = spark_vs_duckdb_chart()
+display(spark_vs_duckdb)
+spark_vs_duckdb.save(
+    "/Users/robinlinacre/Documents/personal/robinl.github.io/src/mdx_dev/fast_deduplication/spark_vs_duckdb_chart.vl.json"
 )

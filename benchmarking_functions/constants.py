@@ -19,8 +19,8 @@ INSTANCE_TYPE = "c6gd.4xlarge"  # arm64 16cpu 32gb $0.64/hr
 # IMAGEID = "ami-0cfd0973db26b893b"  # x86_64
 
 
-MAX_PAIRS = "1e8"
-NUM_INPUT_ROWS = "7e5"
+MAX_PAIRS = "1e9"
+NUM_INPUT_ROWS = "7e6"
 # MAX_PAIRS = "1e7"
 # NUM_INPUT_ROWS = "1.5e6"
 SPLINK_VARIANT_TAG_1 = "3.9.11"

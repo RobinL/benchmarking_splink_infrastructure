@@ -9,7 +9,7 @@ yum install -y amazon-cloudwatch-agent python3-pip git at
 
 
 systemctl start atd
-echo "shutdown -h now" | at now + 2 hours
+echo "shutdown -h now" | at now + 4 hours
 
 
 

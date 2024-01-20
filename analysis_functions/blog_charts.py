@@ -341,3 +341,143 @@ def get_by_function_bar_chart(instances):
         )
     )
     return details_chart
+
+
+def spark_vs_duckdb_chart():
+    # For this one i had to manually compile the results
+    # from the log since the run failed (out of disk) on the cluster stage
+    # --------------------------------------------------------------------------------------------------------- benchmark: 4 tests ---------------------------------------------------------------------------------------------------------
+    # Name (time in s)                                                   Min                   Max                  Mean            StdDev                Median               IQR            Outliers     OPS            Rounds  Iterations
+    # --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+    # test_estimate_probability_two_random_records_match             19.8574 (1.0)         19.8574 (1.0)         19.8574 (1.0)      0.0000 (1.0)         19.8574 (1.0)      0.0000 (1.0)           0;0  0.0504 (1.0)           1           1
+    # test_estimate_parameters_using_expectation_maximisation        21.6141 (1.09)        21.6141 (1.09)        21.6141 (1.09)     0.0000 (1.0)         21.6141 (1.09)     0.0000 (1.0)           0;0  0.0463 (0.92)          1           1
+    # test_estimate_u                                               344.2483 (17.34)      344.2483 (17.34)      344.2483 (17.34)    0.0000 (1.0)        344.2483 (17.34)    0.0000 (1.0)           0;0  0.0029 (0.06)          1           1
+    # test_predict                                                4,899.5871 (246.74)   4,899.5871 (246.74)   4,899.5871 (246.74)   0.0000 (1.0)      4,899.5871 (246.74)   0.0000 (1.0)           0;0  0.0002 (0.00)          1           1
+    # --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    data = [
+        {
+            "mean_seconds": 0.8578379389999924,
+            "benchmark_function": "estimate_probability_two_random_records_match",
+            "benchmark_group1": 0,
+            "instance_type": "c6g.4xlarge",
+            "backend": "duckdb",
+        },
+        {
+            "mean_seconds": 214.73607280599998,
+            "benchmark_function": "estimate_u",
+            "benchmark_group1": 1,
+            "instance_type": "c6g.4xlarge",
+            "backend": "duckdb",
+        },
+        {
+            "mean_seconds": 5.347143168999992,
+            "benchmark_function": "estimate_parameters_using_expectation_maximisation",
+            "benchmark_group1": 2,
+            "instance_type": "c6g.4xlarge",
+            "backend": "duckdb",
+        },
+        {
+            "mean_seconds": 561.0993772009999,
+            "benchmark_function": "predict",
+            "benchmark_group1": 3,
+            "instance_type": "c6g.4xlarge",
+            "backend": "duckdb",
+        },
+        {
+            "mean_seconds": 19.8574,
+            "benchmark_function": "estimate_probability_two_random_records_match",
+            "benchmark_group1": 0,
+            "instance_type": "c6gd.4xlarge",
+            "backend": "spark",
+        },
+        {
+            "mean_seconds": 344.2483,
+            "benchmark_function": "estimate_u",
+            "benchmark_group1": 1,
+            "instance_type": "c6gd.4xlarge",
+            "backend": "spark",
+        },
+        {
+            "mean_seconds": 21.6141,
+            "benchmark_function": "estimate_parameters_using_expectation_maximisation",
+            "benchmark_group1": 2,
+            "instance_type": "c6gd.4xlarge",
+            "backend": "spark",
+        },
+        {
+            "mean_seconds": 4899.5871,
+            "benchmark_function": "predict",
+            "benchmark_group1": 3,
+            "instance_type": "c6gd.4xlarge",
+            "backend": "spark",
+        },
+    ]
+    df = pd.DataFrame(data)
+
+    df["duckdb_percentage_of_spark"] = df.groupby(["benchmark_function"])[
+        "mean_seconds"
+    ].transform(lambda x: x.max() / x.min() if x.name == "spark" else x.min() / x.max())
+
+    df["duckdb_multiple_of_spark"] = 1 / df["duckdb_percentage_of_spark"]
+
+    df["mean_minutes"] = df["mean_seconds"] / 60
+
+    df["benchmark_fn_short"] = df["benchmark_function"].map(
+        benchmark_function_short_lookup
+    )
+
+    # Tooltip for the bar chart
+    bar_chart_tooltip = [
+        alt.Tooltip("benchmark_function:N", title="Function"),
+        alt.Tooltip("mean_minutes:Q", title="Minutes"),
+        alt.Tooltip("instance_type:N", title="Instance Type"),
+        alt.Tooltip(
+            "duckdb_percentage_of_spark:N", title="Duckdb as percentage of spark"
+        ),
+        alt.Tooltip("duckdb_multiple_of_spark:N", title="Spark as multiple of duckdb"),
+    ]
+
+    # Create the chart
+    details_chart = (
+        alt.Chart(df)
+        .mark_bar(size=10)
+        .encode(
+            y=alt.Y(
+                "benchmark_fn_short:N",
+                sort=alt.EncodingSortField(field="benchmark_group1", order="ascending"),
+                axis=alt.Axis(title="Splink Function"),
+            ),
+            x=alt.X(
+                "mean_minutes:Q",
+                axis=alt.Axis(
+                    title="Runtime (Minutes)",
+                ),
+            ),
+            yOffset=alt.YOffset(
+                "backend:N",
+                sort=alt.EncodingSortField(
+                    field="benchmark_group1", order="descending"
+                ),
+            ),
+            color=alt.Color(
+                "backend:N",
+                sort=alt.EncodingSortField(
+                    field="benchmark_group1", order="descending"
+                ),
+            ),
+            tooltip=bar_chart_tooltip,
+        )
+        .properties(
+            title={
+                "text": ["Runtime by Splink Function"],
+                "subtitle": ["Hover over bars for details"],
+                "color": "black",
+                "subtitleColor": "gray",
+            },
+            height=alt.Step(10),
+            width=CHART_WIDTH,
+        )
+    )
+
+    return details_chart
